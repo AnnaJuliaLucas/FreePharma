@@ -1,0 +1,50 @@
+# Documentação dos Endpoints FreePharma
+
+## 1. Importação de NFe (Compra/Venda)
+**POST** `/api/fiscal/importacao-nfe/xml`
+- **Descrição:** Realiza o upload de um arquivo XML de NFe para importação (compra ou venda).
+- **Parâmetros:** 
+  - `file` (MultipartFile): Arquivo XML da NFe.
+- **Resposta:** 
+  - 200 OK: Importação realizada com sucesso.
+  - 400 Bad Request: Erro de validação ou processamento.
+- **Exemplo de uso:**
+  - Upload de arquivo XML via Swagger ou Postman.
+
+## 2. Consulta de Clientes
+**GET** `/api/cliente/{cpfCnpj}`
+- **Descrição:** Consulta os dados de um cliente pelo CPF/CNPJ.
+- **Parâmetros:** 
+  - `cpfCnpj` (String): CPF ou CNPJ do cliente.
+- **Resposta:** 
+  - 200 OK: Dados do cliente.
+  - 404 Not Found: Cliente não encontrado.
+
+## 3. Edição de Cliente
+**PUT** `/api/cliente/{cpfCnpj}`
+- **Descrição:** Atualiza os dados de um cliente.
+- **Parâmetros:** 
+  - `cpfCnpj` (String): CPF ou CNPJ do cliente.
+  - Body: Dados atualizados do cliente.
+- **Resposta:** 
+  - 200 OK: Cliente atualizado.
+  - 400 Bad Request: Erro de validação.
+
+## 4. Consulta de Nota Fiscal
+**GET** `/api/fiscal/notafiscal/{id}`
+- **Descrição:** Consulta os dados de uma nota fiscal pelo ID.
+- **Parâmetros:** 
+  - `id` (Long): ID da nota fiscal.
+- **Resposta:** 
+  - 200 OK: Dados da nota fiscal.
+  - 404 Not Found: Nota fiscal não encontrada.
+
+## 5. Edição de Nota Fiscal
+**PUT** `/api/fiscal/notafiscal/{id}`
+- **Descrição:** Atualiza os dados de uma nota fiscal.
+- **Parâmetros:** 
+  - `id` (Long): ID da nota fiscal.
+  - Body: Dados atualizados da nota fiscal.
+- **Resposta:** 
+  - 200 OK: Nota fiscal atualizada.
+  - 400 Bad Request: Erro de validação.

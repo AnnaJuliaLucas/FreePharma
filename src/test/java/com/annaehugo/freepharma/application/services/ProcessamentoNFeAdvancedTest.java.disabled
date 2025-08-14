@@ -1,0 +1,440 @@
+package com.annaehugo.freepharma.application.services;
+
+import com.annaehugo.freepharma.application.dto.fiscal.NFeXmlData;
+import com.annaehugo.freepharma.domain.entity.administrativo.Farmacia;
+import com.annaehugo.freepharma.domain.entity.administrativo.Unidade;
+import com.annaehugo.freepharma.domain.entity.estoque.EstoqueProduto;
+import com.annaehugo.freepharma.domain.entity.estoque.Fornecedor;
+import com.annaehugo.freepharma.domain.entity.estoque.ProdutoFornecedor;
+import com.annaehugo.freepharma.domain.entity.estoque.ProdutoReferencia;
+import com.annaehugo.freepharma.domain.entity.fiscal.ImportacaoNFe;
+import com.annaehugo.freepharma.domain.entity.fiscal.Inconsistencia;
+import com.annaehugo.freepharma.domain.entity.fiscal.NotaFiscal;
+import com.annaehugo.freepharma.domain.entity.fiscal.NotaFiscalItem;
+import com.annaehugo.freepharma.domain.repository.estoque.*;
+import com.annaehugo.freepharma.domain.repository.fiscal.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Optional;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("ProcessamentoNFeService - Cenários Avançados")
+public class ProcessamentoNFeAdvancedTest {
+    
+    @Mock
+    private FornecedorRepository fornecedorRepository;
+    
+    @Mock
+    private ProdutoReferenciaRepository produtoReferenciaRepository;
+    
+    @Mock
+    private ProdutoFornecedorRepository produtoFornecedorRepository;
+    
+    @Mock
+    private EstoqueProdutoRepository estoqueProdutoRepository;
+    
+    @Mock
+    private NotaFiscalRepository notaFiscalRepository;
+    
+    @Mock
+    private NotaFiscalItemRepository notaFiscalItemRepository;
+    
+    @Mock
+    private InconsistenciaRepository inconsistenciaRepository;
+    
+    @Mock
+    private EstoqueProdutoService estoqueProdutoService;
+    
+    @InjectMocks
+    private ProcessamentoNFeService processamentoService;
+    
+    private NFeXmlData nfeDataTeste;
+    private Unidade unidadeTeste;
+    private ImportacaoNFe importacaoTeste;
+    
+    @BeforeEach
+    void setUp() {
+        nfeDataTeste = criarNFeDataBase();
+        unidadeTeste = criarUnidadeTeste();
+        importacaoTeste = new ImportacaoNFe();
+        importacaoTeste.setId(1L);
+    }
+    
+    @Test
+    @DisplayName("Deve processar NFe de venda com estoque insuficiente")
+    void testVendaComEstoqueInsuficiente() {
+        // Arrange - NFe de venda com quantidade maior que estoque
+        nfeDataTeste.setTipoOperacao("VENDA");
+        NFeXmlData.ItemNFeDados item = nfeDataTeste.getItens().get(0);
+        item.setQuantidade(100); // Quantidade maior que estoque disponível
+        
+        Fornecedor fornecedorMock = criarFornecedorMock();
+        ProdutoReferencia produtoMock = criarProdutoReferenciaMock();
+        ProdutoFornecedor produtoFornecedorMock = criarProdutoFornecedorMock(produtoMock, fornecedorMock);
+        
+        // Estoque insuficiente
+        EstoqueProduto estoqueInsuficiente = new EstoqueProduto();
+        estoqueInsuficiente.setQuantidadeAtual(50); // Menos que os 100 solicitados
+        
+        when(fornecedorRepository.findByCnpj(anyString())).thenReturn(Optional.of(fornecedorMock));
+        when(produtoReferenciaRepository.findByEan(anyString())).thenReturn(Optional.of(produtoMock));
+        when(produtoFornecedorRepository.findByProdutoReferenciaAndFornecedor(any(), any()))
+            .thenReturn(Optional.of(produtoFornecedorMock));
+        when(estoqueProdutoRepository.findByProdutoFornecedorAndUnidadeAndLote(any(), any(), any()))
+            .thenReturn(Optional.of(estoqueInsuficiente));
+        
+        when(notaFiscalRepository.save(any(NotaFiscal.class))).thenReturn(new NotaFiscal());
+        when(notaFiscalItemRepository.save(any(NotaFiscalItem.class))).thenReturn(new NotaFiscalItem());
+        when(inconsistenciaRepository.save(any(Inconsistencia.class))).thenReturn(new Inconsistencia());
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertTrue(result.isSucesso()); // Processamento deve continuar
+        assertFalse(result.getInconsistencias().isEmpty()); // Mas deve gerar inconsistência
+        
+        // Verificar se inconsistência foi registrada
+        verify(inconsistenciaRepository).save(argThat(inconsistencia -> 
+            inconsistencia.getTipo().equals("ESTOQUE_INSUFICIENTE") &&
+            inconsistencia.getDescricao().contains("Estoque insuficiente")
+        ));
+    }
+    
+    @Test
+    @DisplayName("Deve processar NFe com produtos vencidos")
+    void testProcessamentoProdutoVencido() {
+        // Arrange - Item com data de vencimento já passada
+        NFeXmlData.ItemNFeDados item = nfeDataTeste.getItens().get(0);
+        Date dataVencida = new Date(System.currentTimeMillis() - (30 * 24 * 60 * 60 * 1000L)); // 30 dias atrás
+        item.setDataVencimento(dataVencida);
+        
+        Fornecedor fornecedorMock = criarFornecedorMock();
+        ProdutoReferencia produtoMock = criarProdutoReferenciaMock();
+        ProdutoFornecedor produtoFornecedorMock = criarProdutoFornecedorMock(produtoMock, fornecedorMock);
+        
+        setupMocksBasicos(fornecedorMock, produtoMock, produtoFornecedorMock);
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertTrue(result.isSucesso());
+        assertFalse(result.getInconsistencias().isEmpty());
+        
+        // Verificar inconsistência de produto vencido
+        verify(inconsistenciaRepository).save(argThat(inconsistencia -> 
+            inconsistencia.getTipo().equals("PRODUTO_VENCIDO") &&
+            inconsistencia.getDescricao().contains("vencimento")
+        ));
+    }
+    
+    @Test
+    @DisplayName("Deve processar NFe com produtos próximos ao vencimento")
+    void testProcessamentoProdutoProximoVencimento() {
+        // Arrange - Item vencendo em 15 dias (dentro do prazo de alerta)
+        NFeXmlData.ItemNFeDados item = nfeDataTeste.getItens().get(0);
+        Date dataProximaVencimento = new Date(System.currentTimeMillis() + (15 * 24 * 60 * 60 * 1000L)); // 15 dias
+        item.setDataVencimento(dataProximaVencimento);
+        
+        Fornecedor fornecedorMock = criarFornecedorMock();
+        ProdutoReferencia produtoMock = criarProdutoReferenciaMock();
+        ProdutoFornecedor produtoFornecedorMock = criarProdutoFornecedorMock(produtoMock, fornecedorMock);
+        
+        setupMocksBasicos(fornecedorMock, produtoMock, produtoFornecedorMock);
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertTrue(result.isSucesso());
+        
+        // Verificar se foi gerado alerta de vencimento próximo
+        verify(inconsistenciaRepository).save(argThat(inconsistencia -> 
+            inconsistencia.getTipo().equals("VENCIMENTO_PROXIMO") &&
+            inconsistencia.getSeveridade().equals("ALERTA")
+        ));
+    }
+    
+    @Test
+    @DisplayName("Deve processar NFe com discrepância de preços")
+    void testProcessamentoDiscrepanciaPreco() {
+        // Arrange - Preço da NFe muito diferente do preço cadastrado
+        NFeXmlData.ItemNFeDados item = nfeDataTeste.getItens().get(0);
+        item.setValorUnitario(new BigDecimal("100.00")); // Preço muito alto
+        
+        Fornecedor fornecedorMock = criarFornecedorMock();
+        ProdutoReferencia produtoMock = criarProdutoReferenciaMock();
+        ProdutoFornecedor produtoFornecedorMock = criarProdutoFornecedorMock(produtoMock, fornecedorMock);
+        produtoFornecedorMock.setPrecoCompra(new BigDecimal("10.00")); // Preço muito baixo comparado
+        
+        setupMocksBasicos(fornecedorMock, produtoMock, produtoFornecedorMock);
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertTrue(result.isSucesso());
+        
+        // Verificar inconsistência de discrepância de preço
+        verify(inconsistenciaRepository).save(argThat(inconsistencia -> 
+            inconsistencia.getTipo().equals("DISCREPANCIA_PRECO") &&
+            inconsistencia.getDescricao().contains("diferença de preço")
+        ));
+        
+        // Verificar se o preço foi atualizado no produto fornecedor
+        verify(produtoFornecedorRepository).save(argThat(pf -> 
+            pf.getPrecoCompra().compareTo(new BigDecimal("100.00")) == 0
+        ));
+    }
+    
+    @Test
+    @DisplayName("Deve processar NFe com múltiplos lotes do mesmo produto")
+    void testProcessamentoMultiplosLotes() {
+        // Arrange - Dois itens do mesmo produto com lotes diferentes
+        NFeXmlData.ItemNFeDados item1 = nfeDataTeste.getItens().get(0);
+        item1.setLote("LOTE001");
+        item1.setQuantidade(25);
+        
+        NFeXmlData.ItemNFeDados item2 = new NFeXmlData.ItemNFeDados();
+        item2.setCodigoProduto(item1.getCodigoProduto());
+        item2.setNomeProduto(item1.getNomeProduto());
+        item2.setEan(item1.getEan());
+        item2.setLote("LOTE002");
+        item2.setQuantidade(25);
+        item2.setValorUnitario(item1.getValorUnitario());
+        item2.setValorTotal(new BigDecimal("387.50"));
+        
+        nfeDataTeste.setItens(Arrays.asList(item1, item2));
+        
+        Fornecedor fornecedorMock = criarFornecedorMock();
+        ProdutoReferencia produtoMock = criarProdutoReferenciaMock();
+        ProdutoFornecedor produtoFornecedorMock = criarProdutoFornecedorMock(produtoMock, fornecedorMock);
+        
+        when(fornecedorRepository.findByCnpj(anyString())).thenReturn(Optional.of(fornecedorMock));
+        when(produtoReferenciaRepository.findByEan(anyString())).thenReturn(Optional.of(produtoMock));
+        when(produtoFornecedorRepository.findByProdutoReferenciaAndFornecedor(any(), any()))
+            .thenReturn(Optional.of(produtoFornecedorMock));
+        when(estoqueProdutoRepository.findByProdutoFornecedorAndUnidadeAndLote(any(), any(), any()))
+            .thenReturn(Optional.empty()); // Novos estoques para ambos os lotes
+        
+        when(notaFiscalRepository.save(any(NotaFiscal.class))).thenReturn(new NotaFiscal());
+        when(notaFiscalItemRepository.save(any(NotaFiscalItem.class))).thenReturn(new NotaFiscalItem());
+        when(estoqueProdutoRepository.save(any(EstoqueProduto.class))).thenReturn(new EstoqueProduto());
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertTrue(result.isSucesso());
+        assertEquals(2, result.getItensProcessados().size());
+        
+        // Verificar que foram criados dois registros de estoque (um para cada lote)
+        verify(estoqueProdutoRepository, times(2)).save(any(EstoqueProduto.class));
+        verify(notaFiscalItemRepository, times(2)).save(any(NotaFiscalItem.class));
+    }
+    
+    @Test
+    @DisplayName("Deve lidar com produtos sem EAN (código de barras)")
+    void testProcessamentoProdutoSemEAN() {
+        // Arrange - Produto sem EAN, deve buscar por nome
+        NFeXmlData.ItemNFeDados item = nfeDataTeste.getItens().get(0);
+        item.setEan(null); // Sem EAN
+        
+        Fornecedor fornecedorMock = criarFornecedorMock();
+        ProdutoReferencia produtoMock = criarProdutoReferenciaMock();
+        ProdutoFornecedor produtoFornecedorMock = criarProdutoFornecedorMock(produtoMock, fornecedorMock);
+        
+        when(fornecedorRepository.findByCnpj(anyString())).thenReturn(Optional.of(fornecedorMock));
+        when(produtoReferenciaRepository.findByEan(any())).thenReturn(Optional.empty()); // Não encontra por EAN
+        when(produtoReferenciaRepository.findFirstByNome(anyString())).thenReturn(Optional.of(produtoMock)); // Encontra por nome
+        when(produtoFornecedorRepository.findByProdutoReferenciaAndFornecedor(any(), any()))
+            .thenReturn(Optional.of(produtoFornecedorMock));
+        
+        setupMocksComuns();
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertTrue(result.isSucesso());
+        assertEquals(1, result.getItensProcessados().size());
+        
+        // Verificar que tentou buscar por nome após falhar no EAN
+        verify(produtoReferenciaRepository).findByEan(null);
+        verify(produtoReferenciaRepository).findFirstByNome(item.getNomeProduto());
+    }
+    
+    @Test
+    @DisplayName("Deve detectar produtos controlados e aplicar regras especiais")
+    void testProcessamentoProdutoControlado() {
+        // Arrange - Produto controlado (NCM específico)
+        NFeXmlData.ItemNFeDados item = nfeDataTeste.getItens().get(0);
+        item.setNcm("30049019"); // NCM de medicamento controlado
+        item.setNomeProduto("Clonazepam 2mg - MEDICAMENTO CONTROLADO");
+        
+        Fornecedor fornecedorMock = criarFornecedorMock();
+        ProdutoReferencia produtoMock = criarProdutoReferenciaMock();
+        produtoMock.setNcm("30049019");
+        produtoMock.setControlado(true);
+        
+        ProdutoFornecedor produtoFornecedorMock = criarProdutoFornecedorMock(produtoMock, fornecedorMock);
+        
+        setupMocksBasicos(fornecedorMock, produtoMock, produtoFornecedorMock);
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertTrue(result.isSucesso());
+        
+        // Verificar se foi gerada notificação para produto controlado
+        verify(inconsistenciaRepository).save(argThat(inconsistencia -> 
+            inconsistencia.getTipo().equals("PRODUTO_CONTROLADO") &&
+            inconsistencia.getSeveridade().equals("INFORMATIVO")
+        ));
+    }
+    
+    @Test
+    @DisplayName("Deve rollback transação em caso de erro crítico")
+    void testRollbackTransacaoErro() {
+        // Arrange - Simular erro durante salvamento
+        when(fornecedorRepository.findByCnpj(anyString())).thenReturn(Optional.of(criarFornecedorMock()));
+        when(produtoReferenciaRepository.findByEan(anyString())).thenReturn(Optional.of(criarProdutoReferenciaMock()));
+        when(notaFiscalRepository.save(any(NotaFiscal.class))).thenThrow(new RuntimeException("Erro de banco de dados"));
+        
+        // Act
+        ProcessamentoNFeService.ProcessamentoResult result = 
+            processamentoService.processarNFe(nfeDataTeste, unidadeTeste, importacaoTeste);
+        
+        // Assert
+        assertFalse(result.isSucesso());
+        assertFalse(result.getErros().isEmpty());
+        assertTrue(result.getMensagem().contains("Erro no processamento"));
+        
+        // Verificar que não foram feitas alterações subsequentes após o erro
+        verify(notaFiscalItemRepository, never()).save(any());
+        verify(estoqueProdutoRepository, never()).save(any());
+    }
+    
+    // Métodos auxiliares
+    private void setupMocksBasicos(Fornecedor fornecedor, ProdutoReferencia produto, ProdutoFornecedor produtoFornecedor) {
+        when(fornecedorRepository.findByCnpj(anyString())).thenReturn(Optional.of(fornecedor));
+        when(produtoReferenciaRepository.findByEan(anyString())).thenReturn(Optional.of(produto));
+        when(produtoFornecedorRepository.findByProdutoReferenciaAndFornecedor(any(), any()))
+            .thenReturn(Optional.of(produtoFornecedor));
+        
+        setupMocksComuns();
+    }
+    
+    private void setupMocksComuns() {
+        when(notaFiscalRepository.save(any(NotaFiscal.class))).thenReturn(criarNotaFiscalMock());
+        when(notaFiscalItemRepository.save(any(NotaFiscalItem.class))).thenReturn(new NotaFiscalItem());
+        when(estoqueProdutoRepository.findByProdutoFornecedorAndUnidadeAndLote(any(), any(), any()))
+            .thenReturn(Optional.empty());
+        when(estoqueProdutoRepository.save(any(EstoqueProduto.class))).thenReturn(new EstoqueProduto());
+    }
+    
+    private NFeXmlData criarNFeDataBase() {
+        NFeXmlData nfeData = new NFeXmlData();
+        nfeData.setChaveAcesso("35240111222333000144550010000012341234567890");
+        nfeData.setNumero("1234");
+        nfeData.setValorTotal(new BigDecimal("155.00"));
+        nfeData.setTipoOperacao("COMPRA");
+        
+        // Emitente
+        NFeXmlData.EmitenteDados emitente = new NFeXmlData.EmitenteDados();
+        emitente.setCnpj("11222333000144");
+        emitente.setRazaoSocial("Fornecedor Teste LTDA");
+        nfeData.setEmitente(emitente);
+        
+        // Destinatário
+        NFeXmlData.DestinatarioDados destinatario = new NFeXmlData.DestinatarioDados();
+        destinatario.setCnpjCpf("12345678000199");
+        destinatario.setNome("FreePharma Matriz");
+        nfeData.setDestinatario(destinatario);
+        
+        // Item
+        NFeXmlData.ItemNFeDados item = new NFeXmlData.ItemNFeDados();
+        item.setCodigoProduto("PARACETAMOL500");
+        item.setNomeProduto("Paracetamol 500mg cx 20 comp");
+        item.setEan("7891234567890");
+        item.setQuantidade(10);
+        item.setValorUnitario(new BigDecimal("15.50"));
+        item.setValorTotal(new BigDecimal("155.00"));
+        item.setLote("LOTE123");
+        
+        nfeData.setItens(Arrays.asList(item));
+        
+        return nfeData;
+    }
+    
+    private Unidade criarUnidadeTeste() {
+        Unidade unidade = new Unidade();
+        unidade.setId(1L);
+        unidade.setNomeFantasia("Unidade Teste");
+        
+        Farmacia farmacia = new Farmacia();
+        farmacia.setId(1L);
+        farmacia.setRazaoSocial("FreePharma Teste");
+        unidade.setFarmacia(farmacia);
+        
+        return unidade;
+    }
+    
+    private Fornecedor criarFornecedorMock() {
+        Fornecedor fornecedor = new Fornecedor();
+        fornecedor.setId(1L);
+        fornecedor.setCnpj("11222333000144");
+        fornecedor.setRazaoSocial("Fornecedor Teste LTDA");
+        return fornecedor;
+    }
+    
+    private ProdutoReferencia criarProdutoReferenciaMock() {
+        ProdutoReferencia produto = new ProdutoReferencia();
+        produto.setId(1L);
+        produto.setCodigoInterno("PARACETAMOL500");
+        produto.setNome("Paracetamol 500mg cx 20 comp");
+        produto.setEan("7891234567890");
+        produto.setControlado(false);
+        return produto;
+    }
+    
+    private ProdutoFornecedor criarProdutoFornecedorMock(ProdutoReferencia produto, Fornecedor fornecedor) {
+        ProdutoFornecedor produtoFornecedor = new ProdutoFornecedor();
+        produtoFornecedor.setId(1L);
+        produtoFornecedor.setProdutoReferencia(produto);
+        produtoFornecedor.setFornecedor(fornecedor);
+        produtoFornecedor.setPrecoCompra(new BigDecimal("15.50"));
+        return produtoFornecedor;
+    }
+    
+    private NotaFiscal criarNotaFiscalMock() {
+        NotaFiscal notaFiscal = new NotaFiscal();
+        notaFiscal.setId(1L);
+        notaFiscal.setNumero("1234");
+        notaFiscal.setStatus("PROCESSADA");
+        return notaFiscal;
+    }
+}

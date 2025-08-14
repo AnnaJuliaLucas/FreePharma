@@ -1,0 +1,17 @@
+com\annaehugo\freepharma\application\services\NFeXmlParserTest.class
+com\annaehugo\freepharma\application\services\ImportacaoNFeServiceTest.class
+com\annaehugo\freepharma\application\services\AuthenticationServiceTest.class
+com\annaehugo\freepharma\application\services\UsuarioAdministradorServiceTest.class
+com\annaehugo\freepharma\application\services\ImportacaoNFeCompleteTest.class
+com\annaehugo\freepharma\application\services\LoteProcessamentoServiceTest.class
+com\annaehugo\freepharma\application\services\EstoqueProdutoServiceTest.class
+com\annaehugo\freepharma\application\services\FarmaciaServiceTest.class
+com\annaehugo\freepharma\application\services\JwtServiceTest.class
+com\annaehugo\freepharma\integration\ImportacaoNFeIntegrationTest.class
+com\annaehugo\freepharma\application\services\InconsistenciaServiceTest.class
+com\annaehugo\freepharma\application\services\ProcessamentoNFeValidacaoTest.class
+com\annaehugo\freepharma\application\services\ResponsavelServiceTest.class
+com\annaehugo\freepharma\application\services\HistoricoNotaFiscalServiceTest.class
+com\annaehugo\freepharma\application\services\NotaFiscalServiceTest.class
+com\annaehugo\freepharma\application\services\NFeXmlParserAdvancedTest.class
+com\annaehugo\freepharma\application\services\ProcessamentoNFeServiceTest.class

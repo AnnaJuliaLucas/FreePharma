@@ -1,0 +1,30 @@
+{
+  "name": "freepharma-api-tests",
+  "version": "1.0.0",
+  "description": "Cypress API tests for FreePharma API",
+  "main": "index.js",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:api": "cypress run --spec 'e2e/**/*.cy.js'",
+    "test:auth": "cypress run --spec 'e2e/01-authentication.cy.js'",
+    "test:admin": "cypress run --spec 'e2e/02-administrativo-*.cy.js'",
+    "test:estoque": "cypress run --spec 'e2e/05-estoque-*.cy.js'",
+    "test:fiscal": "cypress run --spec 'e2e/06-fiscal-*.cy.js,e2e/07-fiscal-*.cy.js'",
+    "test:roles": "cypress run --spec 'e2e/09-role-based-access-control.cy.js'",
+    "test:demo": "cypress run --spec 'e2e/10-complete-role-demo.cy.js'",
+    "test:all": "cypress run --spec 'e2e/**/*.cy.js'",
+    "test:headless": "cypress run --headless --spec 'e2e/**/*.cy.js'"
+  },
+  "keywords": [
+    "cypress",
+    "api-testing",
+    "freepharma",
+    "e2e-testing"
+  ],
+  "author": "FreePharma Team",
+  "license": "MIT",
+  "devDependencies": {
+    "cypress": "^13.0.0"
+  }
+}

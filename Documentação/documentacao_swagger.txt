@@ -1,0 +1,13 @@
+# Documentação Swagger
+
+Para acessar a documentação interativa dos endpoints da API FreePharma, utilize o Swagger UI disponível em:
+
+`/swagger-ui.html`
+
+- Todos os endpoints REST estarão disponíveis para teste e visualização dos parâmetros, respostas e exemplos.
+- A configuração do Swagger está em `SwaggerConfig.java`.
+- Certifique-se de instalar a dependência `springdoc-openapi-starter-webmvc-ui` no `pom.xml`.
+
+## Exemplo de uso
+- Realize o upload de um XML de NFe pelo endpoint `/api/fiscal/importacao-nfe/xml`.
+- Consulte clientes e notas fiscais pelos endpoints documentados.

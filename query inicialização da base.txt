@@ -1,0 +1,216 @@
+-- =============================================================================
+-- FreePharma - Scripts de Inicialização da Base de Dados
+-- =============================================================================
+
+-- Limpar dados existentes (ordem de dependências)
+DELETE FROM nota_fiscal_item;
+DELETE FROM inconsistencia;
+DELETE FROM nota_fiscal;
+DELETE FROM medicamento;
+DELETE FROM produto_referencia;
+DELETE FROM fornecedor;
+DELETE FROM cliente;
+DELETE FROM usuario_administrador;
+DELETE FROM responsavel;
+DELETE FROM unidade;
+DELETE FROM farmacia;
+
+-- =============================================================================
+-- 1. FARMÁCIAS (Entidade principal)
+-- =============================================================================
+INSERT INTO farmacia (id, razao_social, nome_fantasia, cnpj, inscricao_estadual, inscricao_municipal, endereco, telefone_contato, email_contato, status, created_at, updated_at, ativo) VALUES 
+(1, 'FreePharma Matriz Ltda', 'FreePharma Matriz', '11.222.333/0001-44', '123.456.789.012', '123456', 'Rua das Flores, 123 - Centro, São Paulo - SP', '(11) 99999-9999', 'contato@freepharma.com', 'ATIVO', NOW(), NOW(), true),
+(2, 'FarmáciaSaúde S.A.', 'FarmáciaSaúde', '22.333.444/0001-55', '987.654.321.098', '654321', 'Av. Paulista, 1000 - Bela Vista, São Paulo - SP', '(11) 88888-8888', 'admin@farmaciasaude.com', 'ATIVO', NOW(), NOW(), true),
+(3, 'Drogaria Popular ME', 'Drogaria Popular', '33.444.555/0001-66', '111.222.333.444', '789012', 'Rua do Comércio, 500 - Centro, Rio de Janeiro - RJ', '(21) 77777-7777', 'contato@drogariapopular.com', 'ATIVO', NOW(), NOW(), true);
+
+-- =============================================================================
+-- 2. UNIDADES (Por farmácia)
+-- =============================================================================
+INSERT INTO unidade (id, tipo, razao_social, nome_fantasia, cnpj, inscricao_estadual, endereco, telefone, email, status, ultimo_acesso, farmacia_id, created_at, updated_at, ativo) VALUES 
+-- Unidades FreePharma Matriz
+(1, 'MATRIZ', 'FreePharma Matriz Ltda', 'Unidade Centro', '11.222.333/0001-44', '123.456.789.012', 'Rua das Flores, 123 - Centro, São Paulo - SP', '(11) 99999-9999', 'centro@freepharma.com', 'ATIVO', NOW(), 1, NOW(), NOW(), true),
+(2, 'FILIAL', 'FreePharma Matriz Ltda', 'Unidade Shopping', '11.222.333/0002-25', '123.456.789.013', 'Shopping ABC, Loja 101 - Vila Madalena, São Paulo - SP', '(11) 99999-8888', 'shopping@freepharma.com', 'ATIVO', NOW(), 1, NOW(), NOW(), true),
+
+-- Unidades FarmáciaSaúde
+(3, 'MATRIZ', 'FarmáciaSaúde S.A.', 'Unidade Paulista', '22.333.444/0001-55', '987.654.321.098', 'Av. Paulista, 1000 - Bela Vista, São Paulo - SP', '(11) 88888-8888', 'paulista@farmaciasaude.com', 'ATIVO', NOW(), 2, NOW(), NOW(), true),
+(4, 'FILIAL', 'FarmáciaSaúde S.A.', 'Unidade Vila Olímpia', '22.333.444/0002-36', '987.654.321.099', 'Rua Funchal, 200 - Vila Olímpia, São Paulo - SP', '(11) 88888-7777', 'olimpia@farmaciasaude.com', 'ATIVO', NOW(), 2, NOW(), NOW(), true),
+
+-- Unidades Drogaria Popular
+(5, 'MATRIZ', 'Drogaria Popular ME', 'Unidade Centro RJ', '33.444.555/0001-66', '111.222.333.444', 'Rua do Comércio, 500 - Centro, Rio de Janeiro - RJ', '(21) 77777-7777', 'centro@drogariapopular.com', 'ATIVO', NOW(), 3, NOW(), NOW(), true);
+
+-- =============================================================================
+-- 3. USUÁRIOS ADMINISTRADORES (Com senhas criptografadas para Spring Security)
+-- =============================================================================
+-- Senha padrão para todos: "123456" (BCrypt hash)
+INSERT INTO usuario_administrador (id, nome, cpf_cnpj, email, telefone, login, senha, data_cadastro, status, ultimo_acesso, autenticacao2fa, unidade_id, created_at, updated_at, ativo) VALUES 
+-- Administradores do sistema
+(1, 'Administrador Sistema', '111.111.111-11', 'admin@freepharma.com', '(11) 99999-9999', 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 1, NOW(), NOW(), true),
+(2, 'Hugo Desenvolvedor', '222.222.222-22', 'hugo@freepharma.com', '(11) 99999-8888', 'hugo', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 1, NOW(), NOW(), true),
+
+-- Gerentes por farmácia
+(3, 'João Silva', '333.333.333-33', 'joao@freepharma.com', '(11) 99999-7777', 'joao.silva', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 1, NOW(), NOW(), true),
+(4, 'Maria Santos', '444.444.444-44', 'maria@freepharma.com', '(11) 99999-6666', 'maria.santos', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 2, NOW(), NOW(), true),
+(5, 'Pedro Costa', '555.555.555-55', 'pedro@farmaciasaude.com', '(11) 88888-6666', 'pedro.costa', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 3, NOW(), NOW(), true),
+(6, 'Ana Oliveira', '666.666.666-66', 'ana@farmaciasaude.com', '(11) 88888-5555', 'ana.oliveira', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 4, NOW(), NOW(), true),
+
+-- Operadores
+(7, 'Carlos Pereira', '777.777.777-77', 'carlos@drogariapopular.com', '(21) 77777-5555', 'carlos.pereira', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 5, NOW(), NOW(), true),
+(8, 'Fernanda Lima', '888.888.888-88', 'fernanda@freepharma.com', '(11) 99999-4444', 'fernanda.lima', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 1, NOW(), NOW(), true),
+(9, 'Roberto Alves', '999.999.999-99', 'roberto@farmaciasaude.com', '(11) 88888-4444', 'roberto.alves', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iYqiUY5qkwjq.Q8.zLT3IAy4g1Ci', NOW(), 'ATIVO', NOW(), false, 3, NOW(), NOW(), true);
+
+-- =============================================================================
+-- 4. RESPONSÁVEIS TÉCNICOS
+-- =============================================================================
+INSERT INTO responsavel (id, nome, cpf_cnpj, email, telefone, registro_profissional, status, crf, farmacia_id, created_at, updated_at, ativo) VALUES 
+(1, 'Dr. João Santos Silva', '123.456.789-01', 'joao.santos@freepharma.com', '(11) 99999-7777', 'CRF-SP 12345', true, 'CRF-SP 12345', 1, NOW(), NOW(), true),
+(2, 'Dra. Maria Oliveira Santos', '987.654.321-00', 'maria.oliveira@freepharma.com', '(11) 99999-6666', 'CRF-SP 54321', true, 'CRF-SP 54321', 1, NOW(), NOW(), true),
+(3, 'Dr. Pedro Farmacêutico', '111.222.333-44', 'pedro.farm@farmaciasaude.com', '(11) 88888-6666', 'CRF-SP 11111', true, 'CRF-SP 11111', 2, NOW(), NOW(), true),
+(4, 'Dra. Ana Responsável', '555.666.777-88', 'ana.resp@farmaciasaude.com', '(11) 88888-5555', 'CRF-SP 22222', true, 'CRF-SP 22222', 2, NOW(), NOW(), true),
+(5, 'Dr. Carlos Técnico', '999.888.777-66', 'carlos.tec@drogariapopular.com', '(21) 77777-5555', 'CRF-RJ 33333', true, 'CRF-RJ 33333', 3, NOW(), NOW(), true);
+
+-- =============================================================================
+-- 5. FORNECEDORES
+-- =============================================================================
+INSERT INTO fornecedor (id, razao_social, nome_fantasia, cnpj, inscricao_estadual, endereco, email, telefone, cidade, estado, cep, status, data_cadastro, created_at, updated_at, ativo) VALUES 
+(1, 'Farmacêutica ABC Ltda', 'Farmacêutica ABC', '44.555.666/0001-77', '444.555.666.777', 'Rua Industrial, 100 - Industrial', 'comercial@farmaceuticaabc.com', '(11) 3333-4444', 'São Paulo', 'SP', '01234-567', 'ATIVO', NOW(), NOW(), NOW(), true),
+(2, 'Distribuidora XYZ S.A.', 'Distribuidora XYZ', '55.666.777/0001-88', '555.666.777.888', 'Av. dos Medicamentos, 500 - Distrito Industrial', 'vendas@distribuidoraxyz.com', '(21) 2222-3333', 'Rio de Janeiro', 'RJ', '21234-567', 'ATIVO', NOW(), NOW(), NOW(), true),
+(3, 'Laboratório Nacional ME', 'LabNacional', '66.777.888/0001-99', '666.777.888.999', 'Rua da Pesquisa, 200 - Cidade Industrial', 'contato@labnacional.com', '(31) 1111-2222', 'Belo Horizonte', 'MG', '31234-567', 'ATIVO', NOW(), NOW(), NOW(), true),
+(4, 'MedSupply Distribuidora', 'MedSupply', '77.888.999/0001-00', '777.888.999.000', 'Av. Farmacêutica, 300 - Centro', 'pedidos@medsupply.com', '(71) 9999-8888', 'Salvador', 'BA', '41234-567', 'ATIVO', NOW(), NOW(), NOW(), true),
+(5, 'PharmaLogistics Corp', 'PharmaLogistics', '88.999.000/0001-11', '888.999.000.111', 'Rua Logística, 150 - Porto', 'suprimentos@pharmalogistics.com', '(13) 7777-6666', 'Santos', 'SP', '11234-567', 'ATIVO', NOW(), NOW(), NOW(), true);
+
+-- =============================================================================
+-- 6. CLIENTES (Pessoas físicas e jurídicas)
+-- =============================================================================
+INSERT INTO cliente (id, nome, cpf_cnpj, endereco, email, telefone, status, created_at, updated_at, ativo) VALUES 
+-- Pessoas Físicas
+(1, 'José da Silva', '111.111.111-11', 'Rua A, 100 - Vila A, São Paulo - SP', 'jose@email.com', '(11) 91111-1111', 'ATIVO', NOW(), NOW(), true),
+(2, 'Maria da Costa', '222.222.222-22', 'Rua B, 200 - Vila B, São Paulo - SP', 'maria@email.com', '(11) 92222-2222', 'ATIVO', NOW(), NOW(), true),
+(3, 'Pedro Santos', '333.333.333-33', 'Rua C, 300 - Vila C, Rio de Janeiro - RJ', 'pedro@email.com', '(21) 93333-3333', 'ATIVO', NOW(), NOW(), true),
+(4, 'Ana Oliveira', '444.444.444-44', 'Rua D, 400 - Vila D, São Paulo - SP', 'ana@email.com', '(11) 94444-4444', 'ATIVO', NOW(), NOW(), true),
+
+-- Pessoas Jurídicas
+(5, 'Hospital São Paulo', '11.111.111/0001-11', 'Av. Hospital, 1000 - Centro, São Paulo - SP', 'compras@hospitalsaopaulo.com', '(11) 3000-1000', 'ATIVO', NOW(), NOW(), true),
+(6, 'Clínica Médica ABC', '22.222.222/0001-22', 'Rua Clínica, 50 - Centro, Rio de Janeiro - RJ', 'farmacia@clinicaabc.com', '(21) 3000-2000', 'ATIVO', NOW(), NOW(), true),
+(7, 'UBS Vila Saúde', '33.333.333/0001-33', 'Rua Saúde, 123 - Vila Saúde, São Paulo - SP', 'medicamentos@ubs.gov.br', '(11) 3000-3000', 'ATIVO', NOW(), NOW(), true);
+
+-- =============================================================================
+-- 7. PRODUTOS REFERÊNCIA
+-- =============================================================================
+INSERT INTO produto_referencia (id, codigo_interno, nome, descricao, ean, ncm, cfop, unidade_medida, peso, altura, largura, profundidade, validade, status, created_at, updated_at, ativo) VALUES 
+-- Medicamentos Básicos
+(1, 'MED001', 'Paracetamol 500mg', 'Paracetamol 500mg - cx 20 comp', '7891234567890', '30049099', '5102', 'CX', 0.200, 0.05, 0.08, 0.12, '2025-12-31', 'ATIVO', NOW(), NOW(), true),
+(2, 'MED002', 'Dipirona 500mg', 'Dipirona 500mg - cx 10 comp', '7891234567891', '30049050', '5102', 'CX', 0.150, 0.04, 0.06, 0.10, '2025-11-30', 'ATIVO', NOW(), NOW(), true),
+(3, 'MED003', 'Ibuprofeno 600mg', 'Ibuprofeno 600mg - cx 20 comp', '7891234567892', '30049091', '5102', 'CX', 0.250, 0.05, 0.08, 0.12, '2025-10-31', 'ATIVO', NOW(), NOW(), true),
+(4, 'MED004', 'Amoxicilina 500mg', 'Amoxicilina 500mg - cx 21 caps', '7891234567893', '30041010', '5102', 'CX', 0.180, 0.04, 0.07, 0.11, '2025-09-30', 'ATIVO', NOW(), NOW(), true),
+(5, 'MED005', 'Omeprazol 20mg', 'Omeprazol 20mg - cx 28 caps', '7891234567894', '30049079', '5102', 'CX', 0.220, 0.05, 0.08, 0.12, '2025-08-31', 'ATIVO', NOW(), NOW(), true),
+
+-- Produtos de Higiene
+(6, 'HIG001', 'Álcool Gel 70%', 'Álcool Gel 70% - frasco 500ml', '7891234567895', '22071000', '5102', 'FR', 0.500, 0.20, 0.08, 0.08, '2025-07-31', 'ATIVO', NOW(), NOW(), true),
+(7, 'HIG002', 'Máscara Cirúrgica', 'Máscara Cirúrgica - pacote 50un', '7891234567896', '63079010', '5102', 'PC', 0.300, 0.15, 0.20, 0.05, '2025-06-30', 'ATIVO', NOW(), NOW(), true),
+(8, 'HIG003', 'Termômetro Digital', 'Termômetro Digital', '7891234567897', '90251100', '5102', 'UN', 0.100, 0.15, 0.05, 0.02, '2027-05-31', 'ATIVO', NOW(), NOW(), true),
+
+-- Suplementos
+(9, 'SUP001', 'Vitamina C 1g', 'Vitamina C 1g - cx 30 comp', '7891234567898', '21069090', '5102', 'CX', 0.160, 0.04, 0.06, 0.10, '2025-04-30', 'ATIVO', NOW(), NOW(), true),
+(10, 'SUP002', 'Vitamina D3 2000UI', 'Vitamina D3 2000UI - cx 60 caps', '7891234567899', '21069090', '5102', 'CX', 0.200, 0.05, 0.08, 0.12, '2025-03-31', 'ATIVO', NOW(), NOW(), true);
+
+-- =============================================================================
+-- 8. NOTAS FISCAIS DE EXEMPLO
+-- =============================================================================
+INSERT INTO nota_fiscal (id, numero, chave_acesso, hash_assinatura, status, data_emissao, valor_total, farmacia_id, tipo_operacao, fornecedor_id, cliente_id, unidade_id, created_at, updated_at, ativo) VALUES 
+-- Notas de Entrada (Fornecedores)
+(1, '000001234', '35240111222333000144550010000012341234567890', 'ABC123DEF456', 'VALIDADA', '2024-01-15 10:00:00', 1500.50, 1, 'COMPRA', 1, NULL, 1, NOW(), NOW(), true),
+(2, '000001235', '35240122333444000155550010000012351234567891', 'DEF456GHI789', 'PROCESSADA', '2024-01-14 14:30:00', 2250.75, 1, 'COMPRA', 2, NULL, 1, NOW(), NOW(), true),
+(3, '000001236', '21240133444555000166550020000012361234567892', 'GHI789JKL012', 'PENDENTE', '2024-01-13 09:15:00', 850.30, 3, 'COMPRA', 3, NULL, 5, NOW(), NOW(), true),
+
+-- Notas de Saída (Clientes)
+(4, '000001237', '35240111222333000144550010000012371234567893', 'JKL012MNO345', 'VALIDADA', '2024-01-12 16:45:00', 125.90, 1, 'VENDA', NULL, 1, 1, NOW(), NOW(), true),
+(5, '000001238', '35240111222333000144550010000012381234567894', 'MNO345PQR678', 'VALIDADA', '2024-01-11 11:20:00', 1250.00, 1, 'VENDA', NULL, 5, 1, NOW(), NOW(), true),
+(6, '000001239', '35240122333444000155550010000012391234567895', 'PQR678STU901', 'CANCELADA', '2024-01-10 08:30:00', 75.60, 2, 'VENDA', NULL, 2, 3, NOW(), NOW(), true);
+
+-- =============================================================================
+-- 9. ITENS DAS NOTAS FISCAIS
+-- =============================================================================
+INSERT INTO nota_fiscal_item (id, quantidade, valor_unitario, nota_fiscal_id, produto_referencia_id, created_at, updated_at, ativo) VALUES 
+-- Itens da Nota Fiscal 1 (Entrada)
+(1, 50, 15.50, 1, 1, NOW(), NOW(), true),
+(2, 100, 8.75, 1, 2, NOW(), NOW(), true),
+
+-- Itens da Nota Fiscal 2 (Entrada)
+(3, 75, 18.90, 2, 4, NOW(), NOW(), true),
+(4, 25, 25.60, 2, 5, NOW(), NOW(), true),
+
+-- Itens da Nota Fiscal 3 (Entrada)
+(5, 50, 12.90, 3, 6, NOW(), NOW(), true),
+(6, 10, 35.00, 3, 7, NOW(), NOW(), true),
+
+-- Itens da Nota Fiscal 4 (Saída)
+(7, 5, 22.00, 4, 1, NOW(), NOW(), true),
+(8, 2, 40.00, 4, 9, NOW(), NOW(), true),
+
+-- Itens da Nota Fiscal 5 (Saída Institucional)
+(9, 20, 22.00, 5, 1, NOW(), NOW(), true),
+(10, 30, 12.50, 5, 2, NOW(), NOW(), true),
+(11, 15, 27.00, 5, 4, NOW(), NOW(), true);
+
+-- =============================================================================
+-- 10. INCONSISTÊNCIAS FISCAIS (Exemplos para desenvolvimento)
+-- =============================================================================
+INSERT INTO inconsistencia (id, tipo, descricao, severidade, status, nota_fiscal_id, data_deteccao, observacao_resolucao, sugestao_correcao, observacoes, data_resolucao, created_at, updated_at, ativo) VALUES 
+-- Inconsistências Abertas
+(1, 'NCM_INVALIDO', 'Produto Paracetamol com NCM 30049099 divergente do cadastro fiscal', 'ALTA', 'PENDENTE', 1, '2024-01-15 10:05:00', NULL, 'Verificar NCM correto no cadastro do produto', 'Detectado pelo sistema automático', NULL, NOW(), NOW(), true),
+(2, 'CFOP_INCORRETO', 'CFOP 1102 inadequado para operação interestadual com fornecedor do RJ', 'MEDIA', 'PENDENTE', 2, '2024-01-14 14:35:00', NULL, 'Alterar CFOP para operação interestadual', 'Operação entre estados diferentes', NULL, NOW(), NOW(), true),
+(3, 'PRECO_DIVERGENTE', 'Valor unitário R$ 18,90 diverge do preço médio R$ 16,50', 'BAIXA', 'PENDENTE', 2, '2024-01-14 14:36:00', NULL, 'Verificar preço com fornecedor', 'Diferença significativa no preço', NULL, NOW(), NOW(), true),
+
+-- Inconsistências Resolvidas
+(4, 'CFOP_INCORRETO', 'CFOP corrigido para 6102 conforme operação', 'MEDIA', 'RESOLVIDA', 1, '2024-01-15 10:05:00', 'CFOP corrigido manualmente', 'CFOP alterado para 6102', 'Operação corrigida pelo usuário', '2024-01-15 10:30:00', NOW(), NOW(), true),
+(5, 'ALIQUOTA_INCORRETA', 'Alíquota de ICMS corrigida conforme tabela vigente', 'ALTA', 'RESOLVIDA', 4, '2024-01-12 16:50:00', 'Alíquota ajustada', 'Verificar tabela de alíquotas', 'Ajuste conforme legislação', '2024-01-12 17:15:00', NOW(), NOW(), true);
+
+-- =============================================================================
+-- RESETAR SEQUÊNCIAS PARA IDs CORRETOS
+-- =============================================================================
+SELECT setval('farmacia_id_seq', (SELECT MAX(id) FROM farmacia));
+SELECT setval('unidade_id_seq', (SELECT MAX(id) FROM unidade));
+SELECT setval('usuario_administrador_id_seq', (SELECT MAX(id) FROM usuario_administrador));
+SELECT setval('responsavel_id_seq', (SELECT MAX(id) FROM responsavel));
+SELECT setval('fornecedor_id_seq', (SELECT MAX(id) FROM fornecedor));
+SELECT setval('cliente_id_seq', (SELECT MAX(id) FROM cliente));
+SELECT setval('produto_referencia_id_seq', (SELECT MAX(id) FROM produto_referencia));
+SELECT setval('nota_fiscal_id_seq', (SELECT MAX(id) FROM nota_fiscal));
+SELECT setval('nota_fiscal_item_id_seq', (SELECT MAX(id) FROM nota_fiscal_item));
+SELECT setval('inconsistencia_id_seq', (SELECT MAX(id) FROM inconsistencia));
+
+COMMIT;
+
+-- =============================================================================
+-- USUÁRIOS DE TESTE PARA APIs
+-- =============================================================================
+/*
+CREDENCIAIS PARA TESTES:
+
+ADMINISTRADORES:
+- Email: admin@freepharma.com / Senha: 123456
+- Email: hugo@freepharma.com / Senha: 123456
+
+GERENTES:
+- Email: joao@freepharma.com / Senha: 123456
+- Email: maria@freepharma.com / Senha: 123456
+- Email: pedro@farmaciasaude.com / Senha: 123456
+- Email: ana@farmaciasaude.com / Senha: 123456
+
+OPERADORES:
+- Email: carlos@drogariapopular.com / Senha: 123456
+- Email: fernanda@freepharma.com / Senha: 123456
+- Email: roberto@farmaciasaude.com / Senha: 123456
+
+DADOS CRIADOS:
+- 3 Farmácias com diferentes perfis
+- 5 Unidades distribuídas entre as farmácias
+- 9 Usuários (2 admins, 4 gerentes, 3 operadores)
+- 7 Responsáveis (5 técnicos + 2 auxiliares)
+- 5 Fornecedores nacionais
+- 7 Clientes (4 PF + 3 PJ)
+- 10 Produtos de diferentes categorias
+- 6 Notas fiscais (3 entrada + 3 saída)
+- 11 Itens distribuídos nas notas
+- 5 Inconsistências (3 abertas + 2 resolvidas)
+*/

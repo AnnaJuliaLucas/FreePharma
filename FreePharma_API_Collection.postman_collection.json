@@ -1,0 +1,1714 @@
+{
+  "info": {
+    "name": "FreePharma API - Coleção Completa",
+    "description": "Coleção completa da API FreePharma para gestão fiscal de farmácias\n\n**Funcionalidades:**\n- Gestão de Farmácias e Unidades\n- Administração de Usuários\n- Controle de Fornecedores e Produtos\n- Gestão de Estoque com FIFO\n- Processamento de Notas Fiscais\n- Detecção de Inconsistências Fiscais\n- Relatórios e Dashboard\n\n**Autenticação:** JWT Bearer Token\n**Base URL:** http://localhost:8080/api",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    const token = response.accessToken || response.token;",
+                  "    pm.collectionVariables.set('jwt_token', token);",
+                  "    console.log('Token JWT salvo:', token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@freepharma.com\",\n  \"senha\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Endpoint de autenticação que retorna o token JWT para acesso às demais rotas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 Farmácias",
+      "item": [
+        {
+          "name": "Listar Farmácias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/farmacias",
+              "host": ["{{base_url}}"],
+              "path": ["farmacias"]
+            },
+            "description": "Lista todas as farmácias do tenant"
+          }
+        },
+        {
+          "name": "Buscar Farmácia por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/farmacias/1",
+              "host": ["{{base_url}}"],
+              "path": ["farmacias", "1"]
+            },
+            "description": "Busca farmácia específica por ID"
+          }
+        },
+        {
+          "name": "Criar Farmácia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razaoSocial\": \"Farmácia Exemplo Ltda\",\n  \"nomeFantasia\": \"FarmaExemplo\",\n  \"cnpj\": \"12.345.678/0001-90\",\n  \"inscricaoEstadual\": \"123456789\",\n  \"endereco\": \"Rua das Flores, 123 - Centro\",\n  \"telefoneContato\": \"(11) 99999-9999\",\n  \"emailContato\": \"contato@farmaexemplo.com.br\",\n  \"site\": \"www.farmaexemplo.com.br\",\n  \"status\": \"ATIVA\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/farmacias",
+              "host": ["{{base_url}}"],
+              "path": ["farmacias"]
+            },
+            "description": "Cria nova farmácia"
+          }
+        },
+        {
+          "name": "Atualizar Farmácia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razaoSocial\": \"Farmácia Exemplo Atualizada Ltda\",\n  \"nomeFantasia\": \"FarmaExemplo Plus\",\n  \"cnpj\": \"12.345.678/0001-90\",\n  \"inscricaoEstadual\": \"123456789\",\n  \"endereco\": \"Rua das Flores, 123 - Centro\",\n  \"telefoneContato\": \"(11) 88888-8888\",\n  \"emailContato\": \"contato@farmaexemplo.com.br\",\n  \"status\": \"ATIVA\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/farmacias/1",
+              "host": ["{{base_url}}"],
+              "path": ["farmacias", "1"]
+            },
+            "description": "Atualiza dados da farmácia"
+          }
+        },
+        {
+          "name": "Ativar Farmácia",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/farmacias/1/ativar",
+              "host": ["{{base_url}}"],
+              "path": ["farmacias", "1", "ativar"]
+            },
+            "description": "Ativa uma farmácia inativa"
+          }
+        },
+        {
+          "name": "Inativar Farmácia",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/farmacias/1/inativar",
+              "host": ["{{base_url}}"],
+              "path": ["farmacias", "1", "inativar"]
+            },
+            "description": "Inativa uma farmácia ativa"
+          }
+        },
+        {
+          "name": "Deletar Farmácia",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/farmacias/1",
+              "host": ["{{base_url}}"],
+              "path": ["farmacias", "1"]
+            },
+            "description": "Remove farmácia (soft delete)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Unidades",
+      "item": [
+        {
+          "name": "Listar Unidades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades",
+              "host": ["{{base_url}}"],
+              "path": ["unidades"]
+            },
+            "description": "Lista todas as unidades"
+          }
+        },
+        {
+          "name": "Buscar Unidade por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades/1",
+              "host": ["{{base_url}}"],
+              "path": ["unidades", "1"]
+            },
+            "description": "Busca unidade específica por ID"
+          }
+        },
+        {
+          "name": "Listar Unidades por Farmácia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades/farmacia/1",
+              "host": ["{{base_url}}"],
+              "path": ["unidades", "farmacia", "1"]
+            },
+            "description": "Lista unidades de uma farmácia específica"
+          }
+        },
+        {
+          "name": "Criar Unidade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"MATRIZ\",\n  \"razaoSocial\": \"Farmácia Exemplo Ltda\",\n  \"nomeFantasia\": \"FarmaExemplo - Matriz\",\n  \"cnpj\": \"12.345.678/0001-90\",\n  \"inscricaoEstadual\": \"123456789\",\n  \"endereco\": \"Rua das Flores, 123 - Centro\",\n  \"telefone\": \"(11) 99999-9999\",\n  \"email\": \"matriz@farmaexemplo.com.br\",\n  \"farmaciaId\": 1,\n  \"status\": \"ATIVA\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/unidades",
+              "host": ["{{base_url}}"],
+              "path": ["unidades"]
+            },
+            "description": "Cria nova unidade"
+          }
+        },
+        {
+          "name": "Atualizar Unidade",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"MATRIZ\",\n  \"razaoSocial\": \"Farmácia Exemplo Atualizada Ltda\",\n  \"nomeFantasia\": \"FarmaExemplo - Matriz Principal\",\n  \"cnpj\": \"12.345.678/0001-90\",\n  \"inscricaoEstadual\": \"123456789\",\n  \"endereco\": \"Rua das Flores, 123 - Centro - São Paulo/SP\",\n  \"telefone\": \"(11) 88888-8888\",\n  \"email\": \"matriz@farmaexemplo.com.br\",\n  \"farmaciaId\": 1,\n  \"status\": \"ATIVA\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/unidades/1",
+              "host": ["{{base_url}}"],
+              "path": ["unidades", "1"]
+            },
+            "description": "Atualiza dados da unidade"
+          }
+        },
+        {
+          "name": "Ativar Unidade",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades/1/ativar",
+              "host": ["{{base_url}}"],
+              "path": ["unidades", "1", "ativar"]
+            },
+            "description": "Ativa uma unidade inativa"
+          }
+        },
+        {
+          "name": "Inativar Unidade",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades/1/inativar",
+              "host": ["{{base_url}}"],
+              "path": ["unidades", "1", "inativar"]
+            },
+            "description": "Inativa uma unidade ativa"
+          }
+        },
+        {
+          "name": "Deletar Unidade",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades/1",
+              "host": ["{{base_url}}"],
+              "path": ["unidades", "1"]
+            },
+            "description": "Remove unidade"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Usuários Administradores",
+      "item": [
+        {
+          "name": "Listar Usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores"]
+            },
+            "description": "Lista todos os usuários administradores"
+          }
+        },
+        {
+          "name": "Buscar Usuário por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores/1",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores", "1"]
+            },
+            "description": "Busca usuário específico por ID"
+          }
+        },
+        {
+          "name": "Listar Usuários por Unidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores/unidade/1",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores", "unidade", "1"]
+            },
+            "description": "Lista usuários de uma unidade específica"
+          }
+        },
+        {
+          "name": "Criar Usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva Santos\",\n  \"cpfCnpj\": \"123.456.789-10\",\n  \"email\": \"joao.santos@farmaexemplo.com.br\",\n  \"telefone\": \"(11) 91234-5678\",\n  \"login\": \"joao.santos\",\n  \"senha\": \"123456\",\n  \"unidadeId\": 1,\n  \"perfis\": [\"ADMIN_UNIDADE\"],\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores"]
+            },
+            "description": "Cria novo usuário administrador"
+          }
+        },
+        {
+          "name": "Atualizar Usuário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva Santos Junior\",\n  \"cpfCnpj\": \"123.456.789-10\",\n  \"email\": \"joao.santos@farmaexemplo.com.br\",\n  \"telefone\": \"(11) 98765-4321\",\n  \"login\": \"joao.santos\",\n  \"unidadeId\": 1,\n  \"perfis\": [\"ADMIN_UNIDADE\", \"OPERADOR\"],\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores/1",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores", "1"]
+            },
+            "description": "Atualiza dados do usuário"
+          }
+        },
+        {
+          "name": "Alterar Senha",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senhaAtual\": \"123456\",\n  \"novaSenha\": \"novasenha123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores/1/alterar-senha",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores", "1", "alterar-senha"]
+            },
+            "description": "Altera senha do usuário"
+          }
+        },
+        {
+          "name": "Ativar Usuário",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores/1/ativar",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores", "1", "ativar"]
+            },
+            "description": "Ativa usuário inativo"
+          }
+        },
+        {
+          "name": "Inativar Usuário",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores/1/inativar",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores", "1", "inativar"]
+            },
+            "description": "Inativa usuário ativo"
+          }
+        },
+        {
+          "name": "Deletar Usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios-administradores/1",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios-administradores", "1"]
+            },
+            "description": "Remove usuário"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚚 Fornecedores",
+      "item": [
+        {
+          "name": "Listar Fornecedores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fornecedores",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores"]
+            },
+            "description": "Lista todos os fornecedores"
+          }
+        },
+        {
+          "name": "Buscar Fornecedor por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fornecedores/1",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores", "1"]
+            },
+            "description": "Busca fornecedor específico por ID"
+          }
+        },
+        {
+          "name": "Buscar Fornecedor por CNPJ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fornecedores/cnpj/12.345.678/0001-90",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores", "cnpj", "12.345.678", "0001-90"]
+            },
+            "description": "Busca fornecedor por CNPJ"
+          }
+        },
+        {
+          "name": "Listar Fornecedores Ativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fornecedores/ativos",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores", "ativos"]
+            },
+            "description": "Lista apenas fornecedores ativos"
+          }
+        },
+        {
+          "name": "Criar Fornecedor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razaoSocial\": \"Distribuidora Farmacêutica ABC Ltda\",\n  \"nomeFantasia\": \"Distribuidora ABC\",\n  \"cnpj\": \"22.333.444/0001-55\",\n  \"inscricaoEstadual\": \"223334445\",\n  \"endereco\": \"Rua dos Fornecedores, 500 - Industrial\",\n  \"email\": \"comercial@distribuidoraabc.com.br\",\n  \"telefone\": \"(11) 93333-3333\",\n  \"cidade\": \"São Paulo\",\n  \"estado\": \"SP\",\n  \"cep\": \"03456-789\",\n  \"contato\": \"Carlos Vendedor\",\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fornecedores",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores"]
+            },
+            "description": "Cria novo fornecedor"
+          }
+        },
+        {
+          "name": "Atualizar Fornecedor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razaoSocial\": \"Distribuidora Farmacêutica ABC Atualizada Ltda\",\n  \"nomeFantasia\": \"Distribuidora ABC Plus\",\n  \"cnpj\": \"22.333.444/0001-55\",\n  \"inscricaoEstadual\": \"223334445\",\n  \"endereco\": \"Rua dos Fornecedores, 500 - Industrial - São Paulo/SP\",\n  \"email\": \"comercial@distribuidoraabc.com.br\",\n  \"telefone\": \"(11) 94444-4444\",\n  \"cidade\": \"São Paulo\",\n  \"estado\": \"SP\",\n  \"cep\": \"03456-789\",\n  \"contato\": \"Carlos Silva - Gerente Comercial\",\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fornecedores/1",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores", "1"]
+            },
+            "description": "Atualiza dados do fornecedor"
+          }
+        },
+        {
+          "name": "Ativar Fornecedor",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fornecedores/1/ativar",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores", "1", "ativar"]
+            },
+            "description": "Ativa fornecedor inativo"
+          }
+        },
+        {
+          "name": "Inativar Fornecedor",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fornecedores/1/inativar",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores", "1", "inativar"]
+            },
+            "description": "Inativa fornecedor ativo"
+          }
+        },
+        {
+          "name": "Deletar Fornecedor",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fornecedores/1",
+              "host": ["{{base_url}}"],
+              "path": ["fornecedores", "1"]
+            },
+            "description": "Remove fornecedor"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Produtos",
+      "item": [
+        {
+          "name": "Listar Produtos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos",
+              "host": ["{{base_url}}"],
+              "path": ["produtos"]
+            },
+            "description": "Lista todos os produtos"
+          }
+        },
+        {
+          "name": "Buscar Produto por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/1",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "1"]
+            },
+            "description": "Busca produto específico por ID"
+          }
+        },
+        {
+          "name": "Buscar Produto por Código",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/codigo/PARACET500MG",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "codigo", "PARACET500MG"]
+            },
+            "description": "Busca produto por código interno"
+          }
+        },
+        {
+          "name": "Buscar Produto por EAN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/ean/7891234567890",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "ean", "7891234567890"]
+            },
+            "description": "Busca produto por código EAN/GTIN"
+          }
+        },
+        {
+          "name": "Listar Produtos Ativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/ativos",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "ativos"]
+            },
+            "description": "Lista apenas produtos ativos"
+          }
+        },
+        {
+          "name": "Criar Produto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigoInterno\": \"PARACET500MG\",\n  \"nome\": \"Paracetamol 500mg\",\n  \"descricao\": \"Paracetamol 500mg - Caixa com 20 comprimidos\",\n  \"ean\": \"7891234567890\",\n  \"ncm\": \"30049099\",\n  \"cfop\": \"5102\",\n  \"unidadeMedida\": \"CX\",\n  \"peso\": 0.050,\n  \"altura\": 0.12,\n  \"largura\": 0.08,\n  \"profundidade\": 0.02,\n  \"categoria\": \"MEDICAMENTO\",\n  \"subcategoria\": \"ANALGESICO\",\n  \"principioAtivo\": \"Paracetamol\",\n  \"concentracao\": \"500mg\",\n  \"fabricante\": \"Laboratório Farmacêutico XYZ\",\n  \"registroAnvisa\": \"1234567890123\",\n  \"validade\": \"2026-12-31\",\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/produtos",
+              "host": ["{{base_url}}"],
+              "path": ["produtos"]
+            },
+            "description": "Cria novo produto"
+          }
+        },
+        {
+          "name": "Atualizar Produto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigoInterno\": \"PARACET500MG\",\n  \"nome\": \"Paracetamol 500mg - Genérico\",\n  \"descricao\": \"Paracetamol 500mg - Caixa com 20 comprimidos - Versão Genérica\",\n  \"ean\": \"7891234567890\",\n  \"ncm\": \"30049099\",\n  \"cfop\": \"5102\",\n  \"unidadeMedida\": \"CX\",\n  \"peso\": 0.050,\n  \"altura\": 0.12,\n  \"largura\": 0.08,\n  \"profundidade\": 0.02,\n  \"categoria\": \"MEDICAMENTO\",\n  \"subcategoria\": \"ANALGESICO\",\n  \"principioAtivo\": \"Paracetamol\",\n  \"concentracao\": \"500mg\",\n  \"fabricante\": \"Laboratório Genérico ABC\",\n  \"registroAnvisa\": \"1234567890123\",\n  \"validade\": \"2027-12-31\",\n  \"status\": \"ATIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/produtos/1",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "1"]
+            },
+            "description": "Atualiza dados do produto"
+          }
+        },
+        {
+          "name": "Ativar Produto",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/1/ativar",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "1", "ativar"]
+            },
+            "description": "Ativa produto inativo"
+          }
+        },
+        {
+          "name": "Inativar Produto",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/1/inativar",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "1", "inativar"]
+            },
+            "description": "Inativa produto ativo"
+          }
+        },
+        {
+          "name": "Deletar Produto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/produtos/1",
+              "host": ["{{base_url}}"],
+              "path": ["produtos", "1"]
+            },
+            "description": "Remove produto"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Estoque",
+      "item": [
+        {
+          "name": "Listar Estoque",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque",
+              "host": ["{{base_url}}"],
+              "path": ["estoque"]
+            },
+            "description": "Lista todos os registros de estoque"
+          }
+        },
+        {
+          "name": "Buscar Estoque por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/1",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "1"]
+            },
+            "description": "Busca registro de estoque específico por ID"
+          }
+        },
+        {
+          "name": "Listar Estoque por Unidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/unidade/1",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "unidade", "1"]
+            },
+            "description": "Lista estoque de uma unidade específica"
+          }
+        },
+        {
+          "name": "Listar Estoque por Produto e Unidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/produto/1/unidade/1",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "produto", "1", "unidade", "1"]
+            },
+            "description": "Lista estoque de um produto em uma unidade específica"
+          }
+        },
+        {
+          "name": "Listar Estoque Baixo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/baixo",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "baixo"]
+            },
+            "description": "Lista produtos com estoque baixo (abaixo do mínimo)"
+          }
+        },
+        {
+          "name": "Listar Produtos Próximos ao Vencimento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/vencimento-proximo?dias=30",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "vencimento-proximo"],
+              "query": [
+                {
+                  "key": "dias",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Lista produtos que vencem nos próximos X dias"
+          }
+        },
+        {
+          "name": "FIFO - Ordem de Saída por Produto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/produto/1/unidade/1/fifo",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "produto", "1", "unidade", "1", "fifo"]
+            },
+            "description": "Retorna ordem FIFO para saída de estoque do produto"
+          }
+        },
+        {
+          "name": "Criar Entrada de Estoque",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"produtoId\": 1,\n  \"unidadeId\": 1,\n  \"fornecedorId\": 1,\n  \"quantidade\": 100,\n  \"quantidadeMinima\": 20,\n  \"quantidadeMaxima\": 500,\n  \"lote\": \"LOTE2024080501\",\n  \"dataValidade\": \"2026-06-30\",\n  \"dataFabricacao\": \"2024-01-15\",\n  \"valorUnitario\": 25.00,\n  \"valorTotal\": 2500.00,\n  \"dataEntrada\": \"2024-08-05\",\n  \"observacoes\": \"Entrada via NF 000012345\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/estoque",
+              "host": ["{{base_url}}"],
+              "path": ["estoque"]
+            },
+            "description": "Cria nova entrada de estoque"
+          }
+        },
+        {
+          "name": "Atualizar Estoque",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"produtoId\": 1,\n  \"unidadeId\": 1,\n  \"fornecedorId\": 1,\n  \"quantidade\": 150,\n  \"quantidadeMinima\": 25,\n  \"quantidadeMaxima\": 600,\n  \"lote\": \"LOTE2024080501\",\n  \"dataValidade\": \"2026-06-30\",\n  \"dataFabricacao\": \"2024-01-15\",\n  \"valorUnitario\": 24.50,\n  \"valorTotal\": 3675.00,\n  \"dataEntrada\": \"2024-08-05\",\n  \"observacoes\": \"Estoque atualizado - nova entrada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/estoque/1",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "1"]
+            },
+            "description": "Atualiza dados do estoque"
+          }
+        },
+        {
+          "name": "Ajustar Quantidade",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"novaQuantidade\": 80,\n  \"motivo\": \"Venda - NFC-e 000001\",\n  \"usuarioId\": 1,\n  \"tipoMovimentacao\": \"SAIDA\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/estoque/1/ajustar",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "1", "ajustar"]
+            },
+            "description": "Ajusta quantidade do estoque com rastreabilidade"
+          }
+        },
+        {
+          "name": "Bloquear Estoque",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Produto com suspeita de vencimento próximo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/estoque/1/bloquear",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "1", "bloquear"]
+            },
+            "description": "Bloqueia estoque para movimentação"
+          }
+        },
+        {
+          "name": "Desbloquear Estoque",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/1/desbloquear",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "1", "desbloquear"]
+            },
+            "description": "Desbloqueia estoque previamente bloqueado"
+          }
+        },
+        {
+          "name": "Histórico de Ajustes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/1/ajustes",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "1", "ajustes"]
+            },
+            "description": "Lista histórico de ajustes do estoque"
+          }
+        },
+        {
+          "name": "Deletar Estoque",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/1",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "1"]
+            },
+            "description": "Remove registro de estoque"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧾 Notas Fiscais",
+      "item": [
+        {
+          "name": "Listar Notas Fiscais",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais"]
+            },
+            "description": "Lista todas as notas fiscais"
+          }
+        },
+        {
+          "name": "Listar Notas Fiscais Paginado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/paginado?page=0&size=10&sort=dataEmissao,desc",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "paginado"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "dataEmissao,desc"
+                }
+              ]
+            },
+            "description": "Lista notas fiscais com paginação"
+          }
+        },
+        {
+          "name": "Buscar Nota Fiscal por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/1",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "1"]
+            },
+            "description": "Busca nota fiscal específica por ID"
+          }
+        },
+        {
+          "name": "Buscar por Chave de Acesso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/chave/35202411222333000144550010000123451234567890",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "chave", "35202411222333000144550010000123451234567890"]
+            },
+            "description": "Busca nota fiscal por chave de acesso"
+          }
+        },
+        {
+          "name": "Buscar por Número",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/numero/000012345",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "numero", "000012345"]
+            },
+            "description": "Busca nota fiscal por número"
+          }
+        },
+        {
+          "name": "Listar por Unidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/unidade/1",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "unidade", "1"]
+            },
+            "description": "Lista notas fiscais de uma unidade específica"
+          }
+        },
+        {
+          "name": "Listar por Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/status/VALIDADA",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "status", "VALIDADA"]
+            },
+            "description": "Lista notas fiscais por status (VALIDADA, PROCESSADA, PENDENTE, CANCELADA)"
+          }
+        },
+        {
+          "name": "Listar por Tipo de Operação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/tipo/COMPRA",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "tipo", "COMPRA"]
+            },
+            "description": "Lista notas fiscais por tipo (COMPRA, VENDA)"
+          }
+        },
+        {
+          "name": "Listar por Período",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/periodo?dataInicio=2024-08-01&dataFim=2024-08-31",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "periodo"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-08-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-08-31"
+                }
+              ]
+            },
+            "description": "Lista notas fiscais em um período específico"
+          }
+        },
+        {
+          "name": "Listar por Fornecedor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/fornecedor/1",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "fornecedor", "1"]
+            },
+            "description": "Lista notas fiscais de um fornecedor específico"
+          }
+        },
+        {
+          "name": "Listar Itens da Nota",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/1/itens",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "1", "itens"]
+            },
+            "description": "Lista itens de uma nota fiscal"
+          }
+        },
+        {
+          "name": "Listar Inconsistências da Nota",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/1/inconsistencias",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "1", "inconsistencias"]
+            },
+            "description": "Lista inconsistências fiscais detectadas na nota"
+          }
+        },
+        {
+          "name": "Criar Nota Fiscal de Compra",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": \"000012345\",\n  \"chaveAcesso\": \"35202411222333000144550010000123451234567890\",\n  \"hashAssinatura\": \"HASH123ABC456DEF789\",\n  \"status\": \"VALIDADA\",\n  \"dataEmissao\": \"2024-08-05T14:30:00\",\n  \"valorTotal\": 2500.00,\n  \"farmaciaId\": 1,\n  \"tipoOperacao\": \"COMPRA\",\n  \"fornecedorId\": 1,\n  \"unidadeId\": 1,\n  \"observacoes\": \"Compra de medicamentos - Pedido 2024-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais"]
+            },
+            "description": "Cria nova nota fiscal de compra"
+          }
+        },
+        {
+          "name": "Criar Nota Fiscal de Venda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": \"000054321\",\n  \"chaveAcesso\": \"35202411222333000144550010000543211234567890\",\n  \"hashAssinatura\": \"VENDA123ABC456DEF789\",\n  \"status\": \"EMITIDA\",\n  \"dataEmissao\": \"2024-08-05T16:45:00\",\n  \"valorTotal\": 500.00,\n  \"farmaciaId\": 1,\n  \"tipoOperacao\": \"VENDA\",\n  \"clienteId\": 1,\n  \"unidadeId\": 1,\n  \"observacoes\": \"Venda balcão - Cliente Maria\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais"]
+            },
+            "description": "Cria nova nota fiscal de venda"
+          }
+        },
+        {
+          "name": "Atualizar Nota Fiscal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": \"000012345\",\n  \"chaveAcesso\": \"35202411222333000144550010000123451234567890\",\n  \"hashAssinatura\": \"HASH123ABC456DEF789UPDATED\",\n  \"status\": \"PROCESSADA\",\n  \"dataEmissao\": \"2024-08-05T14:30:00\",\n  \"valorTotal\": 2600.00,\n  \"farmaciaId\": 1,\n  \"tipoOperacao\": \"COMPRA\",\n  \"fornecedorId\": 1,\n  \"unidadeId\": 1,\n  \"observacoes\": \"Compra de medicamentos - Pedido 2024-001 - Processada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/1",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "1"]
+            },
+            "description": "Atualiza dados da nota fiscal"
+          }
+        },
+        {
+          "name": "Cancelar Nota Fiscal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notas-fiscais/1",
+              "host": ["{{base_url}}"],
+              "path": ["notas-fiscais", "1"]
+            },
+            "description": "Cancela nota fiscal (soft delete - muda status para CANCELADA)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚠️ Inconsistências Fiscais",
+      "item": [
+        {
+          "name": "Listar Inconsistências",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias"]
+            },
+            "description": "Lista todas as inconsistências fiscais (ordenadas por severidade)"
+          }
+        },
+        {
+          "name": "Buscar Inconsistência por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/1",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "1"]
+            },
+            "description": "Busca inconsistência específica por ID"
+          }
+        },
+        {
+          "name": "Listar por Nota Fiscal",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/nota-fiscal/1",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "nota-fiscal", "1"]
+            },
+            "description": "Lista inconsistências de uma nota fiscal específica"
+          }
+        },
+        {
+          "name": "Listar por Tipo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/tipo/NCM_INVALIDO",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "tipo", "NCM_INVALIDO"]
+            },
+            "description": "Lista inconsistências por tipo (NCM_INVALIDO, CFOP_INCORRETO, PRECO_DIVERGENTE, etc.)"
+          }
+        },
+        {
+          "name": "Listar por Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/status/PENDENTE",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "status", "PENDENTE"]
+            },
+            "description": "Lista inconsistências por status (PENDENTE, RESOLVIDA)"
+          }
+        },
+        {
+          "name": "Listar Não Resolvidas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/nao-resolvidas",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "nao-resolvidas"]
+            },
+            "description": "Lista apenas inconsistências não resolvidas (priorizando críticas e altas)"
+          }
+        },
+        {
+          "name": "Criar Inconsistência",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"NCM_INVALIDO\",\n  \"descricao\": \"Produto com NCM 30049099 divergente do cadastro fiscal - código correto seria 30049050\",\n  \"severidade\": \"ALTA\",\n  \"status\": \"PENDENTE\",\n  \"notaFiscalId\": 1,\n  \"dataDeteccao\": \"2024-08-05T15:30:00\",\n  \"sugestaoCorrecao\": \"Verificar NCM correto no cadastro do produto e atualizar na próxima nota fiscal\",\n  \"observacoes\": \"Detectado pelo sistema automático de validação fiscal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias"]
+            },
+            "description": "Cria nova inconsistência fiscal"
+          }
+        },
+        {
+          "name": "Atualizar Inconsistência",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"NCM_INVALIDO\",\n  \"descricao\": \"Descrição atualizada da inconsistência fiscal\",\n  \"severidade\": \"MEDIA\",\n  \"status\": \"PENDENTE\",\n  \"notaFiscalId\": 1,\n  \"sugestaoCorrecao\": \"Nova sugestão de correção atualizada\",\n  \"observacoes\": \"Observações atualizadas pelo usuário\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/1",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "1"]
+            },
+            "description": "Atualiza dados da inconsistência"
+          }
+        },
+        {
+          "name": "Resolver Inconsistência",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"observacao\": \"Inconsistência resolvida: NCM corrigido no cadastro do produto\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/1/resolver",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "1", "resolver"]
+            },
+            "description": "Marca inconsistência como resolvida com observação obrigatória"
+          }
+        },
+        {
+          "name": "Reabrir Inconsistência",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Inconsistência reapareceu em nova importação\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/1/reabrir",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "1", "reabrir"]
+            },
+            "description": "Reabre inconsistência resolvida com motivo obrigatório"
+          }
+        },
+        {
+          "name": "Deletar Inconsistência",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/1",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "1"]
+            },
+            "description": "Remove inconsistência"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📥 Importação NFe",
+      "item": [
+        {
+          "name": "Importar NFe XML",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Arquivo XML da NFe"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/importacao-nfe/xml",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "importacao-nfe", "xml"]
+            },
+            "description": "Importa e processa automaticamente um arquivo XML de NFe. O sistema irá:\n- Validar o arquivo XML\n- Extrair dados da NFe\n- Criar/atualizar fornecedor automaticamente\n- Criar/atualizar produtos automaticamente\n- Atualizar estoque (entrada para compras, saída para vendas)\n- Detectar inconsistências fiscais\n- Retornar resultado com IDs criados e inconsistências detectadas"
+          }
+        },
+        {
+          "name": "Importar NFe XML Completo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Arquivo XML da NFe"
+                },
+                {
+                  "key": "unidadeId",
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID da unidade (opcional)"
+                },
+                {
+                  "key": "usuarioId", 
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID do usuário (opcional)"
+                },
+                {
+                  "key": "observacoes",
+                  "value": "Importação via API",
+                  "type": "text",
+                  "description": "Observações sobre a importação (opcional)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/importacao-nfe/xml/completo",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "importacao-nfe", "xml", "completo"]
+            },
+            "description": "Importa NFe com validação completa e parâmetros adicionais. Inclui todas as funcionalidades do endpoint básico mais:\n- Validações de permissão de usuário e unidade\n- Rastreamento do usuário responsável\n- Observações personalizadas\n- Auditoria completa"
+          }
+        },
+        {
+          "name": "Teste - Arquivo XML Válido",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "exemplo-nfe-valida.xml",
+                  "description": "Exemplo de NFe válida para teste"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/importacao-nfe/xml",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "importacao-nfe", "xml"]
+            },
+            "description": "Teste com arquivo XML válido. Resposta esperada:\n{\n  \"status\": \"SUCESSO\",\n  \"mensagem\": \"NFe processada com sucesso. X itens processados.\",\n  \"arquivo\": \"nome-arquivo.xml\",\n  \"tamanho\": 1234,\n  \"importacaoId\": 1,\n  \"notaFiscalId\": 1,\n  \"fornecedorId\": 1,\n  \"itensProcessados\": 2,\n  \"inconsistenciasDetectadas\": 0\n}"
+          }
+        },
+        {
+          "name": "Teste - Arquivo XML Inválido", 
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "arquivo-invalido.txt",
+                  "description": "Arquivo não-XML para teste de validação"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/importacao-nfe/xml",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "importacao-nfe", "xml"]
+            },
+            "description": "Teste com arquivo inválido. Resposta esperada:\n{\n  \"status\": \"ERRO\",\n  \"mensagem\": \"Apenas arquivos XML são aceitos\",\n  \"timestamp\": 1234567890\n}"
+          }
+        },
+        {
+          "name": "Teste - Arquivo Muito Grande",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata", 
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "arquivo-grande.xml",
+                  "description": "Arquivo maior que 10MB para teste"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/importacao-nfe/xml",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "importacao-nfe", "xml"]
+            },
+            "description": "Teste com arquivo muito grande (>10MB). Resposta esperada:\n{\n  \"status\": \"ERRO\",\n  \"mensagem\": \"Arquivo muito grande. Tamanho máximo permitido: 10MB\",\n  \"timestamp\": 1234567890\n}"
+          }
+        },
+        {
+          "name": "Teste - NFe com Inconsistências",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file", 
+                  "src": "nfe-com-inconsistencias.xml",
+                  "description": "NFe com NCM inválido, CFOP incorreto, etc."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/importacao-nfe/xml",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "importacao-nfe", "xml"]
+            },
+            "description": "Teste com NFe que contém inconsistências propositais. Resposta esperada:\n{\n  \"status\": \"SUCESSO\",\n  \"mensagem\": \"NFe processada com sucesso. X itens processados.\",\n  \"inconsistenciasDetectadas\": 3,\n  \"alertas\": \"NFe importada com 3 inconsistências. Verifique o relatório de inconsistências.\",\n  ...\n}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Relatórios e Estatísticas",
+      "item": [
+        {
+          "name": "Relatório Consolidado de Estoque",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/relatorio-consolidado/unidade/1",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "relatorio-consolidado", "unidade", "1"]
+            },
+            "description": "Relatório consolidado de estoque por unidade"
+          }
+        },
+        {
+          "name": "Relatório de Giro de Estoque",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/estoque/relatorio-giro?periodo=30",
+              "host": ["{{base_url}}"],
+              "path": ["estoque", "relatorio-giro"],
+              "query": [
+                {
+                  "key": "periodo",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Relatório de giro de estoque por período (dias)"
+          }
+        },
+        {
+          "name": "Estatísticas de Inconsistências por Tipo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/estatisticas/tipo",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "estatisticas", "tipo"]
+            },
+            "description": "Estatísticas de inconsistências agrupadas por tipo"
+          }
+        },
+        {
+          "name": "Estatísticas de Inconsistências por Severidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/estatisticas/severidade",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "estatisticas", "severidade"]
+            },
+            "description": "Estatísticas de inconsistências agrupadas por severidade"
+          }
+        },
+        {
+          "name": "Relatório de Inconsistências por Período",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/fiscal/inconsistencias/relatorio?dataInicio=2024-08-01&dataFim=2024-08-31",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "inconsistencias", "relatorio"],
+              "query": [
+                {
+                  "key": "dataInicio",
+                  "value": "2024-08-01"
+                },
+                {
+                  "key": "dataFim",
+                  "value": "2024-08-31"
+                }
+              ]
+            },
+            "description": "Relatório completo de inconsistências por período"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 Utilidades e Validações",
+      "item": [
+        {
+          "name": "Validar CNPJ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cnpj\": \"11.222.333/0001-44\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fiscal/validar-cnpj",
+              "host": ["{{base_url}}"],
+              "path": ["fiscal", "validar-cnpj"]
+            },
+            "description": "Valida CNPJ contra serviços externos (com circuit breaker)"
+          }
+        }
+      ]
+    }
+  ]
+}

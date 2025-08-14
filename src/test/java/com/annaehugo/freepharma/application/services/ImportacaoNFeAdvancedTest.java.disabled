@@ -1,0 +1,441 @@
+package com.annaehugo.freepharma.application.services;
+
+import com.annaehugo.freepharma.application.dto.fiscal.NFeXmlData;
+import com.annaehugo.freepharma.domain.entity.administrativo.Unidade;
+import com.annaehugo.freepharma.domain.entity.administrativo.UsuarioAdministrador;
+import com.annaehugo.freepharma.domain.entity.fiscal.ImportacaoNFe;
+import com.annaehugo.freepharma.domain.entity.fiscal.LoteProcessamento;
+import com.annaehugo.freepharma.domain.repository.fiscal.ImportacaoNFeRepository;
+import com.annaehugo.freepharma.domain.repository.fiscal.LoteProcessamentoRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("ImportacaoNFeService - Cenários Avançados")
+public class ImportacaoNFeAdvancedTest {
+
+    @Mock
+    private NFeXmlParser nfeXmlParser;
+    
+    @Mock
+    private ProcessamentoNFeService processamentoNFeService;
+    
+    @Mock
+    private ImportacaoNFeRepository importacaoRepository;
+    
+    @Mock
+    private LoteProcessamentoRepository loteProcessamentoRepository;
+    
+    @InjectMocks
+    private ImportacaoNFeService importacaoNFeService;
+
+    private MockMultipartFile xmlFile;
+    private MockMultipartFile[] multipleFiles;
+    private Unidade unidadeTeste;
+    private UsuarioAdministrador usuarioTeste;
+
+    @BeforeEach
+    void setUp() {
+        // Arquivo XML válido de compra
+        String xmlContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
+                <NFe>
+                    <infNFe Id="NFe35240111222333000144550010000012341234567890">
+                        <ide>
+                            <nNF>1234</nNF>
+                            <serie>1</serie>
+                            <dhEmi>2024-01-15T10:00:00-03:00</dhEmi>
+                        </ide>
+                        <emit>
+                            <CNPJ>11222333000144</CNPJ>
+                            <xNome>Fornecedor Teste</xNome>
+                        </emit>
+                        <dest>
+                            <CNPJ>12345678000199</CNPJ>
+                            <xNome>FreePharma</xNome>
+                        </dest>
+                        <det nItem="1">
+                            <prod>
+                                <cProd>PARACETAMOL500</cProd>
+                                <xProd>Paracetamol 500mg</xProd>
+                                <CFOP>1102</CFOP>
+                                <qCom>10</qCom>
+                                <vUnCom>15.50</vUnCom>
+                                <vProd>155.00</vProd>
+                            </prod>
+                        </det>
+                        <total>
+                            <ICMSTot>
+                                <vNF>155.00</vNF>
+                            </ICMSTot>
+                        </total>
+                    </infNFe>
+                </NFe>
+            </nfeProc>
+            """;
+        
+        xmlFile = new MockMultipartFile(
+            "file", 
+            "nfe-compra.xml", 
+            "text/xml", 
+            xmlContent.getBytes()
+        );
+        
+        // Múltiplos arquivos para teste de lote
+        multipleFiles = new MockMultipartFile[]{
+            xmlFile,
+            new MockMultipartFile("file2", "nfe-compra-2.xml", "text/xml", xmlContent.getBytes()),
+            new MockMultipartFile("file3", "nfe-compra-3.xml", "text/xml", xmlContent.getBytes())
+        };
+        
+        unidadeTeste = criarUnidadeTeste();
+        usuarioTeste = criarUsuarioTeste();
+    }
+
+    @Test
+    @DisplayName("Deve processar importação com parsing e processamento completo")
+    void testImportacaoCompletaComSucesso() {
+        // Arrange
+        NFeXmlData nfeDataMock = criarNFeXmlDataMock();
+        ProcessamentoNFeService.ProcessamentoResult resultadoProcessamento = criarResultadoSucesso();
+        
+        when(nfeXmlParser.parseNFeXml(any(byte[].class))).thenReturn(nfeDataMock);
+        when(processamentoNFeService.processarNFe(any(NFeXmlData.class), any(Unidade.class), any(ImportacaoNFe.class)))
+            .thenReturn(resultadoProcessamento);
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+
+        // Act
+        Map<String, Object> resultado = importacaoNFeService.importarNFeXml(xmlFile, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertEquals("SUCESSO", resultado.get("status"));
+        assertEquals("COMPRA", resultado.get("tipoOperacao"));
+        assertNotNull(resultado.get("importacaoId"));
+        assertNotNull(resultado.get("notaFiscalId"));
+        assertNotNull(resultado.get("fornecedorId"));
+        assertEquals(1, resultado.get("itensProcessados"));
+        assertTrue(((String) resultado.get("mensagem")).contains("sucesso"));
+
+        verify(nfeXmlParser).parseNFeXml(any(byte[].class));
+        verify(processamentoNFeService).processarNFe(any(NFeXmlData.class), any(Unidade.class), any(ImportacaoNFe.class));
+        verify(importacaoRepository).save(any(ImportacaoNFe.class));
+    }
+
+    @Test
+    @DisplayName("Deve processar importação de venda com decremento de estoque")
+    void testImportacaoVendaComDecrementoEstoque() {
+        // Arrange
+        NFeXmlData nfeDataVenda = criarNFeXmlDataMock();
+        nfeDataVenda.setTipoOperacao("VENDA");
+        
+        ProcessamentoNFeService.ProcessamentoResult resultadoProcessamento = criarResultadoSucesso();
+        
+        when(nfeXmlParser.parseNFeXml(any(byte[].class))).thenReturn(nfeDataVenda);
+        when(processamentoNFeService.processarNFe(any(NFeXmlData.class), any(Unidade.class), any(ImportacaoNFe.class)))
+            .thenReturn(resultadoProcessamento);
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+
+        // Act
+        Map<String, Object> resultado = importacaoNFeService.importarNFeXml(xmlFile, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertEquals("SUCESSO", resultado.get("status"));
+        assertEquals("VENDA", resultado.get("tipoOperacao"));
+        
+        // Verificar que o processamento foi chamado corretamente para venda
+        verify(processamentoNFeService).processarNFe(
+            argThat(nfeData -> "VENDA".equals(nfeData.getTipoOperacao())), 
+            eq(unidadeTeste), 
+            any(ImportacaoNFe.class)
+        );
+    }
+
+    @Test
+    @DisplayName("Deve lidar com erro durante parsing do XML")
+    void testErroNoParsingXML() {
+        // Arrange
+        when(nfeXmlParser.parseNFeXml(any(byte[].class)))
+            .thenThrow(new RuntimeException("XML inválido ou corrompido"));
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+
+        // Act
+        Map<String, Object> resultado = importacaoNFeService.importarNFeXml(xmlFile, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertEquals("ERRO", resultado.get("status"));
+        assertTrue(((String) resultado.get("mensagem")).contains("XML inválido"));
+        assertNotNull(resultado.get("importacaoId")); // Importação deve ser salva mesmo com erro
+        
+        verify(nfeXmlParser).parseNFeXml(any(byte[].class));
+        verify(processamentoNFeService, never()).processarNFe(any(), any(), any());
+        verify(importacaoRepository).save(argThat(importacao -> 
+            "ERRO".equals(importacao.getStatus()) && 
+            importacao.getMensagemErro().contains("XML inválido")
+        ));
+    }
+
+    @Test
+    @DisplayName("Deve lidar com erro durante processamento da NFe")
+    void testErroNoProcessamentoNFe() {
+        // Arrange
+        NFeXmlData nfeDataMock = criarNFeXmlDataMock();
+        ProcessamentoNFeService.ProcessamentoResult resultadoErro = criarResultadoErro();
+        
+        when(nfeXmlParser.parseNFeXml(any(byte[].class))).thenReturn(nfeDataMock);
+        when(processamentoNFeService.processarNFe(any(NFeXmlData.class), any(Unidade.class), any(ImportacaoNFe.class)))
+            .thenReturn(resultadoErro);
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+
+        // Act
+        Map<String, Object> resultado = importacaoNFeService.importarNFeXml(xmlFile, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertEquals("ERRO", resultado.get("status"));
+        assertTrue(((String) resultado.get("mensagem")).contains("processamento"));
+        assertNotNull(resultado.get("importacaoId"));
+        assertFalse(((String) resultado.get("erros")).isEmpty());
+
+        verify(importacaoRepository).save(argThat(importacao -> 
+            "ERRO".equals(importacao.getStatus())
+        ));
+    }
+
+    @Test
+    @DisplayName("Deve processar importação com inconsistências mas sucesso geral")
+    void testImportacaoComInconsistencias() {
+        // Arrange
+        NFeXmlData nfeDataMock = criarNFeXmlDataMock();
+        ProcessamentoNFeService.ProcessamentoResult resultadoComInconsistencias = criarResultadoComInconsistencias();
+        
+        when(nfeXmlParser.parseNFeXml(any(byte[].class))).thenReturn(nfeDataMock);
+        when(processamentoNFeService.processarNFe(any(NFeXmlData.class), any(Unidade.class), any(ImportacaoNFe.class)))
+            .thenReturn(resultadoComInconsistencias);
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+
+        // Act
+        Map<String, Object> resultado = importacaoNFeService.importarNFeXml(xmlFile, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertEquals("SUCESSO_COM_ALERTAS", resultado.get("status"));
+        assertNotNull(resultado.get("inconsistencias"));
+        assertTrue(((String) resultado.get("alertas")).contains("inconsistência"));
+        assertEquals(1, resultado.get("itensProcessados"));
+
+        verify(importacaoRepository).save(argThat(importacao -> 
+            "PROCESSADA_COM_ALERTAS".equals(importacao.getStatus())
+        ));
+    }
+
+    @Test
+    @DisplayName("Deve processar lote de múltiplos arquivos XML")
+    void testProcessamentoLoteMultiplosArquivos() {
+        // Arrange
+        NFeXmlData nfeDataMock = criarNFeXmlDataMock();
+        ProcessamentoNFeService.ProcessamentoResult resultadoProcessamento = criarResultadoSucesso();
+        
+        when(nfeXmlParser.parseNFeXml(any(byte[].class))).thenReturn(nfeDataMock);
+        when(processamentoNFeService.processarNFe(any(NFeXmlData.class), any(Unidade.class), any(ImportacaoNFe.class)))
+            .thenReturn(resultadoProcessamento);
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+        when(loteProcessamentoRepository.save(any(LoteProcessamento.class))).thenReturn(criarLoteProcessamentoMock());
+
+        // Act
+        Map<String, Object> resultado = importacaoNFeService.importarLoteNFeXml(multipleFiles, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertEquals("SUCESSO", resultado.get("status"));
+        assertEquals(3, resultado.get("totalArquivos"));
+        assertEquals(3, resultado.get("sucessos"));
+        assertEquals(0, resultado.get("erros"));
+        assertNotNull(resultado.get("loteId"));
+        assertTrue(((String) resultado.get("mensagem")).contains("3 arquivos processados"));
+
+        verify(nfeXmlParser, times(3)).parseNFeXml(any(byte[].class));
+        verify(processamentoNFeService, times(3)).processarNFe(any(), any(), any());
+        verify(importacaoRepository, times(3)).save(any(ImportacaoNFe.class));
+        verify(loteProcessamentoRepository).save(any(LoteProcessamento.class));
+    }
+
+    @Test
+    @DisplayName("Deve processar lote com alguns arquivos com erro")
+    void testProcessamentoLoteComErros() {
+        // Arrange
+        NFeXmlData nfeDataMock = criarNFeXmlDataMock();
+        ProcessamentoNFeService.ProcessamentoResult resultadoSucesso = criarResultadoSucesso();
+        
+        when(nfeXmlParser.parseNFeXml(any(byte[].class)))
+            .thenReturn(nfeDataMock) // Primeiro arquivo OK
+            .thenThrow(new RuntimeException("XML inválido")) // Segundo arquivo com erro
+            .thenReturn(nfeDataMock); // Terceiro arquivo OK
+        
+        when(processamentoNFeService.processarNFe(any(NFeXmlData.class), any(Unidade.class), any(ImportacaoNFe.class)))
+            .thenReturn(resultadoSucesso);
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+        when(loteProcessamentoRepository.save(any(LoteProcessamento.class))).thenReturn(criarLoteProcessamentoMock());
+
+        // Act
+        Map<String, Object> resultado = importacaoNFeService.importarLoteNFeXml(multipleFiles, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertEquals("PARCIAL", resultado.get("status"));
+        assertEquals(3, resultado.get("totalArquivos"));
+        assertEquals(2, resultado.get("sucessos"));
+        assertEquals(1, resultado.get("erros"));
+        assertNotNull(resultado.get("loteId"));
+        assertTrue(((String) resultado.get("mensagem")).contains("2 sucessos, 1 erro"));
+
+        verify(loteProcessamentoRepository).save(argThat(lote -> 
+            "PARCIAL".equals(lote.getStatus()) &&
+            lote.getTotalArquivos() == 3 &&
+            lote.getSucessos() == 2 &&
+            lote.getErros() == 1
+        ));
+    }
+
+    @Test
+    @DisplayName("Deve processar arquivos de forma assíncrona para lotes grandes")
+    void testProcessamentoAssincrono() {
+        // Arrange
+        MockMultipartFile[] arquivosGrandes = new MockMultipartFile[10];
+        for (int i = 0; i < 10; i++) {
+            arquivosGrandes[i] = new MockMultipartFile("file" + i, "nfe-" + i + ".xml", "text/xml", 
+                "<?xml version=\"1.0\"?><nfe><test>" + i + "</test></nfe>".getBytes());
+        }
+        
+        NFeXmlData nfeDataMock = criarNFeXmlDataMock();
+        ProcessamentoNFeService.ProcessamentoResult resultadoProcessamento = criarResultadoSucesso();
+        
+        when(nfeXmlParser.parseNFeXml(any(byte[].class))).thenReturn(nfeDataMock);
+        when(processamentoNFeService.processarNFe(any(), any(), any())).thenReturn(resultadoProcessamento);
+        when(importacaoRepository.save(any(ImportacaoNFe.class))).thenReturn(criarImportacaoMock());
+        when(loteProcessamentoRepository.save(any(LoteProcessamento.class))).thenReturn(criarLoteProcessamentoMock());
+
+        // Act
+        CompletableFuture<Map<String, Object>> futureResult = 
+            importacaoNFeService.importarLoteNFeXmlAssincrono(arquivosGrandes, unidadeTeste, usuarioTeste);
+
+        // Assert
+        assertNotNull(futureResult);
+        
+        // Verificar que o processamento foi iniciado (mas pode ainda estar em andamento)
+        Map<String, Object> resultado = futureResult.join(); // Wait for completion
+        
+        assertEquals("SUCESSO", resultado.get("status"));
+        assertEquals(10, resultado.get("totalArquivos"));
+        assertEquals(10, resultado.get("sucessos"));
+        assertEquals(0, resultado.get("erros"));
+    }
+
+    @Test
+    @DisplayName("Deve validar tipos de arquivo suportados")
+    void testValidacaoTiposArquivo() {
+        // Arrange
+        MockMultipartFile[] arquivosMistos = new MockMultipartFile[]{
+            new MockMultipartFile("file1", "nfe.xml", "text/xml", "<xml>content</xml>".getBytes()),
+            new MockMultipartFile("file2", "nfe.txt", "text/plain", "not xml content".getBytes()),
+            new MockMultipartFile("file3", "nfe.pdf", "application/pdf", "pdf content".getBytes())
+        };
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            importacaoNFeService.importarLoteNFeXml(arquivosMistos, unidadeTeste, usuarioTeste);
+        });
+
+        assertTrue(exception.getMessage().contains("Apenas arquivos XML"));
+    }
+
+    // Métodos auxiliares
+    private Unidade criarUnidadeTeste() {
+        Unidade unidade = new Unidade();
+        unidade.setId(1L);
+        unidade.setNomeFantasia("Unidade Teste");
+        return unidade;
+    }
+
+    private UsuarioAdministrador criarUsuarioTeste() {
+        UsuarioAdministrador usuario = new UsuarioAdministrador();
+        usuario.setId(1L);
+        usuario.setNome("Usuario Teste");
+        usuario.setLogin("teste");
+        return usuario;
+    }
+
+    private NFeXmlData criarNFeXmlDataMock() {
+        NFeXmlData nfeData = new NFeXmlData();
+        nfeData.setChaveAcesso("35240111222333000144550010000012341234567890");
+        nfeData.setNumero("1234");
+        nfeData.setTipoOperacao("COMPRA");
+        
+        // Emitente
+        NFeXmlData.EmitenteDados emitente = new NFeXmlData.EmitenteDados();
+        emitente.setCnpj("11222333000144");
+        emitente.setRazaoSocial("Fornecedor Teste");
+        nfeData.setEmitente(emitente);
+        
+        // Item
+        NFeXmlData.ItemNFeDados item = new NFeXmlData.ItemNFeDados();
+        item.setCodigoProduto("PARACETAMOL500");
+        item.setNomeProduto("Paracetamol 500mg");
+        nfeData.setItens(Arrays.asList(item));
+        
+        return nfeData;
+    }
+
+    private ProcessamentoNFeService.ProcessamentoResult criarResultadoSucesso() {
+        ProcessamentoNFeService.ProcessamentoResult resultado = new ProcessamentoNFeService.ProcessamentoResult();
+        resultado.setSucesso(true);
+        resultado.setMensagem("Processamento concluído com sucesso");
+        resultado.setNotaFiscalId(1L);
+        resultado.setFornecedorId(1L);
+        resultado.setItensProcessados(Arrays.asList("Item processado"));
+        return resultado;
+    }
+
+    private ProcessamentoNFeService.ProcessamentoResult criarResultadoErro() {
+        ProcessamentoNFeService.ProcessamentoResult resultado = new ProcessamentoNFeService.ProcessamentoResult();
+        resultado.setSucesso(false);
+        resultado.setMensagem("Erro no processamento da NFe");
+        resultado.setErros(Arrays.asList("Erro de validação", "Erro de banco"));
+        return resultado;
+    }
+
+    private ProcessamentoNFeService.ProcessamentoResult criarResultadoComInconsistencias() {
+        ProcessamentoNFeService.ProcessamentoResult resultado = criarResultadoSucesso();
+        resultado.setInconsistencias(Arrays.asList("Preço divergente", "Produto vencimento próximo"));
+        return resultado;
+    }
+
+    private ImportacaoNFe criarImportacaoMock() {
+        ImportacaoNFe importacao = new ImportacaoNFe();
+        importacao.setId(1L);
+        importacao.setNomeArquivo("nfe-teste.xml");
+        importacao.setStatus("PROCESSADA");
+        return importacao;
+    }
+
+    private LoteProcessamento criarLoteProcessamentoMock() {
+        LoteProcessamento lote = new LoteProcessamento();
+        lote.setId(1L);
+        lote.setTotalArquivos(3);
+        lote.setSucessos(3);
+        lote.setErros(0);
+        lote.setStatus("CONCLUIDO");
+        return lote;
+    }
+}
