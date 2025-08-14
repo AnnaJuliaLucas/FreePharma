@@ -10,8 +10,7 @@ import java.util.Optional;
 @Repository
 public interface UnidadeRepository extends JpaRepository<Unidade, Long> {
     List<Unidade> findByFarmaciaId(Long farmaciaId);
+    List<Unidade> findByStatus(String status);
 
     Optional<Unidade> findByCnpj(String cnpj);
-
-    List<Unidade> findByStatus(String status);
 }

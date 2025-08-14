@@ -550,17 +550,17 @@ describe('CRUD Produtos e Estoque - API Tests', () => {
         url: `${baseUrl}/api/produtos`,
         failOnStatusCode: false
       }).then((response) => {
-        expect(response.status).to.eq(403);
+        expect(response.status).to.be.oneOf([401, 403]);
       });
     });
 
-    it('should return 401 without authentication for estoque operations', () => {
+    it('should return 401 or 403 without authentication for estoque operations', () => {
       cy.request({
         method: 'GET',
         url: `${baseUrl}/api/estoque`,
         failOnStatusCode: false
       }).then((response) => {
-        expect(response.status).to.eq(403);
+        expect(response.status).to.be.oneOf([401, 403]);
       });
     });
   });

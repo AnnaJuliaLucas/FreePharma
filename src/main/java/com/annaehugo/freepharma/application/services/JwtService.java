@@ -34,7 +34,6 @@ public class JwtService {
         return generateToken(Map.of(), userDetails, expirationMs);
     }
 
-    /** **CORREÇÃO: adiciona generateRefreshToken(UserDetails)** */
     public String generateRefreshToken(UserDetails userDetails) {
         return generateToken(Map.of(), userDetails, expirationMs * 7);
     }

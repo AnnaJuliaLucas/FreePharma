@@ -15,18 +15,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * Service para fazer parse de arquivos XML de NFe e extrair dados estruturados
- */
 @Service
 public class NFeXmlParser {
     
     private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
     
-    /**
-     * Faz parse do conteúdo XML e extrai os dados estruturados da NFe
-     */
     public NFeXmlData parseNFeXml(byte[] xmlContent) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

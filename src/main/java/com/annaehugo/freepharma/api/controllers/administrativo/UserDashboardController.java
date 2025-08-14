@@ -15,7 +15,6 @@ import java.util.Map;
 public class UserDashboardController {
 
     @GetMapping("/dashboard")
-    @ApiOperation(value = "Dashboard do usuário", notes = "Acesso para usuários com perfil USER ou ADMIN")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getUserDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
@@ -28,7 +27,6 @@ public class UserDashboardController {
     }
 
     @GetMapping("/profile")
-    @ApiOperation(value = "Perfil do usuário", notes = "Visualizar perfil pessoal")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getUserProfile() {
         Map<String, Object> profile = new HashMap<>();
@@ -41,7 +39,6 @@ public class UserDashboardController {
     }
 
     @PutMapping("/profile")
-    @ApiOperation(value = "Atualizar perfil", notes = "Usuários podem atualizar seus próprios dados")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> updateProfile(@RequestBody Map<String, String> profileData) {
         Map<String, String> response = new HashMap<>();

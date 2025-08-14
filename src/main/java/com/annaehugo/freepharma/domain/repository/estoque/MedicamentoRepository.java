@@ -13,17 +13,11 @@ import java.util.Optional;
 public interface MedicamentoRepository extends JpaRepository<Medicamento, Long> {
     
     Optional<Medicamento> findByCodigoInterno(String codigoInterno);
-    
     Optional<Medicamento> findByEan(String ean);
-    
     Optional<Medicamento> findByRegistroAnvisa(String registroAnvisa);
     
     List<Medicamento> findByPrincipioAtivoContainingIgnoreCase(String principioAtivo);
-    
     List<Medicamento> findByLaboratorioContainingIgnoreCase(String laboratorio);
-    
     List<Medicamento> findByControladoTrue();
-    
     List<Medicamento> findByGenericoTrue();
-
 }

@@ -81,7 +81,6 @@ public class UnidadeService {
             throw new RuntimeException("Unidade não encontrada");
         }
         
-        // Verificar se unidade tem dependências (usuários, estoque, etc.)
         // TODO: Implementar verificações de integridade referencial
         
         unidadeRepository.deleteById(id);

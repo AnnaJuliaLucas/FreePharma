@@ -20,7 +20,6 @@ public class LoteProcessamentoService {
     public LoteProcessamentoService(LoteProcessamentoRepository loteProcessamentoRepository) {
         this.loteProcessamentoRepository = loteProcessamentoRepository;
     }
-
     public List<LoteProcessamento> listarTodos() {
         return loteProcessamentoRepository.findAll();
     }

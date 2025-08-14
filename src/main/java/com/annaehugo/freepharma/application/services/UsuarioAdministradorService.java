@@ -62,7 +62,6 @@ public class UsuarioAdministradorService {
     public UsuarioAdministrador salvar(UsuarioAdministrador usuario) {
         validarDadosUsuario(usuario);
         
-        // Verificar se login já existe
         if (usuario.getId() == null) {
             Optional<UsuarioAdministrador> existente = usuarioRepository.findByLogin(usuario.getLogin());
             if (existente.isPresent()) {
@@ -70,7 +69,6 @@ public class UsuarioAdministradorService {
             }
         }
         
-        // Verificar se email já existe
         if (usuario.getEmail() != null) {
             Optional<UsuarioAdministrador> existenteEmail = usuarioRepository.findByEmail(usuario.getEmail());
             if (existenteEmail.isPresent() && !existenteEmail.get().getId().equals(usuario.getId())) {
@@ -78,12 +76,10 @@ public class UsuarioAdministradorService {
             }
         }
         
-        // Criptografar senha se for novo usuário ou se senha foi alterada
         if (usuario.getId() == null || usuario.getSenha() != null) {
             usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         }
         
-        // Set data de cadastro para novos usuários
         if (usuario.getId() == null) {
             usuario.setDataCadastro(new Date());
             usuario.setStatus("ATIVO");

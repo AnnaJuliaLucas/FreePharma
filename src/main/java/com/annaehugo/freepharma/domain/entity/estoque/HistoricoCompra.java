@@ -20,6 +20,4 @@ public class HistoricoCompra extends EntidadeBase {
     @ManyToOne
     @JoinColumn(name = "fornecedor_id")
     private Fornecedor fornecedor;
-
-    // Sem suporte a CRUD
 }

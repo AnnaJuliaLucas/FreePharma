@@ -17,83 +17,56 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service para processamento automático de NFe com criação de entidades e controle de estoque
- */
 @Service
 public class ProcessamentoNFeService {
     
     @Autowired
     private FornecedorRepository fornecedorRepository;
-    
     @Autowired
     private ProdutoReferenciaRepository produtoReferenciaRepository;
-    
     @Autowired
     private ProdutoFornecedorRepository produtoFornecedorRepository;
-    
     @Autowired
     private EstoqueProdutoRepository estoqueProdutoRepository;
-    
     @Autowired
     private NotaFiscalRepository notaFiscalRepository;
-    
     @Autowired
     private NotaFiscalItemRepository notaFiscalItemRepository;
-    
     @Autowired
     private InconsistenciaRepository inconsistenciaRepository;
-    
     @Autowired
     private EstoqueProdutoService estoqueProdutoService;
-    
-    /**
-     * Processa automaticamente uma NFe:
-     * 1. Cria/busca fornecedor
-     * 2. Cria/busca produtos 
-     * 3. Cria nota fiscal
-     * 4. Atualiza estoque
-     * 5. Detecta inconsistências
-     */
+
     @Transactional
     public ProcessamentoResult processarNFe(NFeXmlData nfeData, Unidade unidade, ImportacaoNFe importacao) {
         ProcessamentoResult result = new ProcessamentoResult();
         
         try {
-            // 1. Processar fornecedor
             Fornecedor fornecedor = processarFornecedor(nfeData.getEmitente());
             result.setFornecedor(fornecedor);
             
-            // 2. Criar nota fiscal
             NotaFiscal notaFiscal = criarNotaFiscal(nfeData, fornecedor, unidade, importacao);
             result.setNotaFiscal(notaFiscal);
             
-            // 3. Processar itens da nota
             List<NotaFiscalItem> itens = new ArrayList<>();
             for (NFeXmlData.ItemNFeDados itemData : nfeData.getItens()) {
                 try {
-                    // Processar produto
                     ProdutoFornecedor produtoFornecedor = processarProduto(itemData, fornecedor);
                     
-                    // Criar item da nota fiscal
                     NotaFiscalItem item = criarItemNotaFiscal(itemData, notaFiscal, produtoFornecedor);
                     itens.add(item);
                     
-                    // Atualizar estoque
                     atualizarEstoque(produtoFornecedor, itemData, unidade, nfeData.getTipoOperacao());
                     
                     result.getItensProcessados().add(item);
                     
                 } catch (Exception e) {
-                    // Registrar inconsistência para item específico
-                    criarInconsistencia("ERRO_PROCESSAMENTO_ITEM", 
+                    criarInconsistencia("ERRO_PROCESSAMENTO_ITEM",
                         "Erro ao processar item " + itemData.getCodigoProduto() + ": " + e.getMessage(),
                         "ALTA", notaFiscal);
                     result.getErros().add("Item " + itemData.getCodigoProduto() + ": " + e.getMessage());
                 }
             }
-            
-            // 4. Validar consistência geral da nota
             validarConsistenciaNota(nfeData, notaFiscal, result);
             
             result.setSucesso(true);
@@ -109,16 +82,13 @@ public class ProcessamentoNFeService {
     }
     
     private Fornecedor processarFornecedor(NFeXmlData.EmitenteDados emitenteData) {
-        // Buscar fornecedor existente por CNPJ
         Optional<Fornecedor> fornecedorExistente = fornecedorRepository.findByCnpj(emitenteData.getCnpj());
         
         if (fornecedorExistente.isPresent()) {
-            // Atualizar dados se necessário
             Fornecedor fornecedor = fornecedorExistente.get();
             atualizarDadosFornecedor(fornecedor, emitenteData);
             return fornecedorRepository.save(fornecedor);
         } else {
-            // Criar novo fornecedor
             Fornecedor novoFornecedor = new Fornecedor();
             preencherDadosFornecedor(novoFornecedor, emitenteData);
             return fornecedorRepository.save(novoFornecedor);
@@ -137,7 +107,6 @@ public class ProcessamentoNFeService {
         fornecedor.setDataCadastro(new Date());
         fornecedor.setAtivo(true);
         
-        // Extrair cidade e estado do endereço (lógica simplificada)
         if (dados.getEndereco() != null && dados.getEndereco().contains(",")) {
             String[] parts = dados.getEndereco().split(",");
             if (parts.length >= 2) {
@@ -154,7 +123,6 @@ public class ProcessamentoNFeService {
     }
     
     private void atualizarDadosFornecedor(Fornecedor fornecedor, NFeXmlData.EmitenteDados dados) {
-        // Atualizar dados que podem ter mudado
         if (dados.getNomeFantasia() != null && !dados.getNomeFantasia().equals(fornecedor.getNomeFantasia())) {
             fornecedor.setNomeFantasia(dados.getNomeFantasia());
         }
@@ -170,15 +138,12 @@ public class ProcessamentoNFeService {
     }
     
     private ProdutoFornecedor processarProduto(NFeXmlData.ItemNFeDados itemData, Fornecedor fornecedor) {
-        // Buscar produto referência existente
         ProdutoReferencia produtoReferencia = buscarOuCriarProdutoReferencia(itemData);
         
-        // Buscar produto fornecedor existente
-        Optional<ProdutoFornecedor> produtoFornecedorExistente = 
+        Optional<ProdutoFornecedor> produtoFornecedorExistente =
             produtoFornecedorRepository.findByProdutoReferenciaAndFornecedor(produtoReferencia, fornecedor);
         
         if (produtoFornecedorExistente.isPresent()) {
-            // Atualizar preços se necessário
             ProdutoFornecedor produtoFornecedor = produtoFornecedorExistente.get();
             if (itemData.getValorUnitario() != null) {
                 produtoFornecedor.setPrecoCompra(itemData.getValorUnitario());
@@ -186,7 +151,6 @@ public class ProcessamentoNFeService {
             }
             return produtoFornecedorRepository.save(produtoFornecedor);
         } else {
-            // Criar novo produto fornecedor
             ProdutoFornecedor novoProdutoFornecedor = new ProdutoFornecedor();
             novoProdutoFornecedor.setProdutoReferencia(produtoReferencia);
             novoProdutoFornecedor.setFornecedor(fornecedor);
@@ -203,8 +167,7 @@ public class ProcessamentoNFeService {
     }
     
     private ProdutoReferencia buscarOuCriarProdutoReferencia(NFeXmlData.ItemNFeDados itemData) {
-        // Tentar buscar por EAN primeiro
-        if (itemData.getEan() != null && !itemData.getEan().trim().isEmpty() && 
+        if (itemData.getEan() != null && !itemData.getEan().trim().isEmpty() &&
             !itemData.getEan().equals("SEM GTIN")) {
             Optional<ProdutoReferencia> porEan = produtoReferenciaRepository.findByEan(itemData.getEan());
             if (porEan.isPresent()) {
@@ -212,7 +175,6 @@ public class ProcessamentoNFeService {
             }
         }
         
-        // Tentar buscar por nome similar
         if (itemData.getNomeProduto() != null && !itemData.getNomeProduto().trim().isEmpty()) {
             Optional<ProdutoReferencia> porNome = produtoReferenciaRepository.findFirstByNome(itemData.getNomeProduto());
             if (porNome.isPresent()) {
@@ -220,10 +182,8 @@ public class ProcessamentoNFeService {
             }
         }
         
-        // Criar novo produto referência
         ProdutoReferencia novoProduto = new ProdutoReferencia();
         
-        // Gerar código interno único
         String codigoInterno = gerarCodigoInternoUnico();
         novoProduto.setCodigoInterno(codigoInterno);
         
@@ -277,7 +237,6 @@ public class ProcessamentoNFeService {
     private void atualizarEstoque(ProdutoFornecedor produtoFornecedor, NFeXmlData.ItemNFeDados itemData, 
                                   Unidade unidade, String tipoOperacao) {
         
-        // Buscar estoque existente
         Optional<EstoqueProduto> estoqueExistente = estoqueProdutoRepository
             .findByProdutoFornecedorAndUnidadeAndLote(produtoFornecedor, unidade, itemData.getLote());
         
@@ -285,7 +244,6 @@ public class ProcessamentoNFeService {
         if (estoqueExistente.isPresent()) {
             estoque = estoqueExistente.get();
         } else {
-            // Criar novo registro de estoque
             estoque = new EstoqueProduto();
             estoque.setProdutoFornecedor(produtoFornecedor);
             estoque.setProdutoReferencia(produtoFornecedor.getProdutoReferencia());
@@ -296,17 +254,13 @@ public class ProcessamentoNFeService {
             estoque.setAtivo(true);
         }
         
-        // Atualizar quantidade baseado no tipo de operação
         int quantidade = itemData.getQuantidade();
         if ("COMPRA".equals(tipoOperacao)) {
-            // Incrementar estoque (entrada)
             estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() + quantidade);
         } else if ("VENDA".equals(tipoOperacao)) {
-            // Decrementar estoque (saída)
             estoque.setQuantidadeAtual(estoque.getQuantidadeAtual() - quantidade);
         }
         
-        // Atualizar valores
         if (itemData.getValorUnitario() != null) {
             estoque.setValorUnitario(itemData.getValorUnitario());
             estoque.setValorTotal(itemData.getValorUnitario()
@@ -314,7 +268,6 @@ public class ProcessamentoNFeService {
         }
         
         estoque.setDataUltimaMovimentacao(new Date());
-        
         estoqueProdutoRepository.save(estoque);
     }
     
@@ -331,7 +284,6 @@ public class ProcessamentoNFeService {
                 "MEDIA", notaFiscal);
         }
         
-        // Validar data de emissão
         if (nfeData.getDataEmissao() != null) {
             Date hoje = new Date();
             long diffEmDias = (hoje.getTime() - nfeData.getDataEmissao().getTime()) / (24 * 60 * 60 * 1000);
@@ -349,31 +301,26 @@ public class ProcessamentoNFeService {
             }
         }
         
-        // Validar NCMs e CFOPs
         for (NFeXmlData.ItemNFeDados item : nfeData.getItens()) {
             validarItemNFe(item, notaFiscal);
         }
         
-        // Validar consistência fiscal específica para farmácias
         validarConsistenciaFarmaceutica(nfeData, notaFiscal);
     }
     
     private void validarItemNFe(NFeXmlData.ItemNFeDados item, NotaFiscal notaFiscal) {
-        // Validar NCM
         if (item.getNcm() == null || item.getNcm().length() != 8 || !item.getNcm().matches("\\d{8}")) {
             criarInconsistencia("NCM_INVALIDO",
                 "NCM inválido para produto " + item.getNomeProduto() + ": " + item.getNcm(),
                 "ALTA", notaFiscal);
         }
         
-        // Validar CFOP
         if (item.getCfop() == null || item.getCfop().length() != 4 || !item.getCfop().matches("\\d{4}")) {
             criarInconsistencia("CFOP_INVALIDO",
                 "CFOP inválido para produto " + item.getNomeProduto() + ": " + item.getCfop(),
                 "ALTA", notaFiscal);
         }
         
-        // Validar EAN/GTIN
         if (item.getEan() != null && !item.getEan().equals("SEM GTIN")) {
             if (!validarEAN(item.getEan())) {
                 criarInconsistencia("EAN_INVALIDO",
@@ -382,7 +329,6 @@ public class ProcessamentoNFeService {
             }
         }
         
-        // Validar valores
         if (item.getValorUnitario() == null || item.getValorUnitario().compareTo(BigDecimal.ZERO) <= 0) {
             criarInconsistencia("VALOR_UNITARIO_INVALIDO",
                 "Valor unitário inválido para produto " + item.getNomeProduto(),
@@ -395,7 +341,6 @@ public class ProcessamentoNFeService {
                 "ALTA", notaFiscal);
         }
         
-        // Validar lote e validade para produtos farmacêuticos
         if (isProdutoFarmaceutico(item) && item.getLote() == null) {
             criarInconsistencia("LOTE_OBRIGATORIO",
                 "Lote obrigatório para produto farmacêutico: " + item.getNomeProduto(),
@@ -404,10 +349,8 @@ public class ProcessamentoNFeService {
     }
     
     private void validarConsistenciaFarmaceutica(NFeXmlData nfeData, NotaFiscal notaFiscal) {
-        // Validar NCMs específicos de medicamentos
         for (NFeXmlData.ItemNFeDados item : nfeData.getItens()) {
             if (isProdutoFarmaceutico(item)) {
-                // Medicamentos devem ter NCM específico (30xx.xxxx)
                 if (!item.getNcm().startsWith("30")) {
                     criarInconsistencia("NCM_MEDICAMENTO_INCORRETO",
                         "NCM incorreto para medicamento: " + item.getNomeProduto() + 
@@ -415,7 +358,6 @@ public class ProcessamentoNFeService {
                         "MEDIA", notaFiscal);
                 }
                 
-                // Verificar validade
                 if (item.getDataVencimento() != null) {
                     Date hoje = new Date();
                     long diffEmDias = (item.getDataVencimento().getTime() - hoje.getTime()) / (24 * 60 * 60 * 1000);
@@ -437,7 +379,6 @@ public class ProcessamentoNFeService {
         }
         
         try {
-            // Validação simples de EAN-13
             int soma = 0;
             for (int i = 0; i < 12; i++) {
                 int digito = Character.getNumericValue(ean.charAt(i));
@@ -466,7 +407,6 @@ public class ProcessamentoNFeService {
     private void criarInconsistencia(String tipoString, String descricao, String severidade, NotaFiscal notaFiscal) {
         Inconsistencia inconsistencia = new Inconsistencia();
         
-        // Mapear string para enum
         TipoInconsistencia tipo = mapearTipoInconsistencia(tipoString);
         inconsistencia.setTipo(tipo);
         inconsistencia.setDescricao(descricao);

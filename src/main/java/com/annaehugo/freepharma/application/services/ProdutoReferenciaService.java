@@ -57,7 +57,6 @@ public class ProdutoReferenciaService {
     public ProdutoReferencia salvar(ProdutoReferencia produto) {
         validarDadosProduto(produto);
         
-        // Verificar se código interno já existe
         if (produto.getId() == null) {
             Optional<ProdutoReferencia> existente = produtoRepository.findByCodigoInterno(produto.getCodigoInterno());
             if (existente.isPresent()) {
@@ -65,7 +64,6 @@ public class ProdutoReferenciaService {
             }
         }
         
-        // Verificar se EAN já existe (se informado)
         if (produto.getEan() != null && !produto.getEan().trim().isEmpty()) {
             Optional<ProdutoReferencia> existenteEan = produtoRepository.findByEan(produto.getEan());
             if (existenteEan.isPresent() && !existenteEan.get().getId().equals(produto.getId())) {
@@ -73,7 +71,6 @@ public class ProdutoReferenciaService {
             }
         }
         
-        // Set status padrão
         if (produto.getStatus() == null) {
             produto.setStatus("ATIVO");
         }
@@ -98,9 +95,7 @@ public class ProdutoReferenciaService {
             throw new RuntimeException("Produto não encontrado");
         }
         
-        // Verificar se produto tem estoque ou está em notas fiscais
         // TODO: Implementar verificação de integridade referencial
-        
         produtoRepository.deleteById(id);
     }
 
@@ -131,7 +126,6 @@ public class ProdutoReferenciaService {
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
     }
 
-    // Métodos específicos para Medicamentos
     public List<Medicamento> listarMedicamentos() {
         return medicamentoRepository.findAll();
     }
@@ -164,8 +158,7 @@ public class ProdutoReferenciaService {
         if (produto.getUnidadeMedida() == null || produto.getUnidadeMedida().trim().isEmpty()) {
             throw new RuntimeException("Unidade de medida é obrigatória");
         }
-        
-        // Validações específicas para medicamentos
+
         if (produto instanceof Medicamento) {
             Medicamento medicamento = (Medicamento) produto;
             

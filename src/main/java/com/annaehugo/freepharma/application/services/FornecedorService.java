@@ -65,7 +65,6 @@ public class FornecedorService {
         return fornecedorRepository.findById(id)
                 .map(fornecedor -> {
                     fornecedorAtualizado.setId(id);
-                    // Não permitir alterar CNPJ
                     fornecedorAtualizado.setCnpj(fornecedor.getCnpj());
                     validarDadosFornecedor(fornecedorAtualizado);
                     return fornecedorRepository.save(fornecedorAtualizado);

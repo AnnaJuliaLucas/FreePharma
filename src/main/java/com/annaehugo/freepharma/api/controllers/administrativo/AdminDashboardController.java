@@ -15,7 +15,6 @@ import java.util.Map;
 public class AdminDashboardController {
 
     @GetMapping("/dashboard")
-    @ApiOperation(value = "Dashboard administrativo", notes = "Acesso restrito a usuários com perfil ADMIN")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
@@ -29,7 +28,6 @@ public class AdminDashboardController {
     }
 
     @GetMapping("/users")
-    @ApiOperation(value = "Listar todos os usuários", notes = "Acesso restrito a administradores")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllUsers() {
         Map<String, Object> response = new HashMap<>();
@@ -41,7 +39,6 @@ public class AdminDashboardController {
     }
 
     @PostMapping("/system/config")
-    @ApiOperation(value = "Configurações do sistema", notes = "Apenas administradores podem alterar configurações")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> updateSystemConfig(@RequestBody Map<String, String> config) {
         Map<String, String> response = new HashMap<>();

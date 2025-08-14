@@ -10,12 +10,9 @@ import java.util.Optional;
 @Repository
 public interface ProdutoReferenciaRepository extends JpaRepository<ProdutoReferencia, Long> {
     List<ProdutoReferencia> findByStatus(String status);
-
     List<ProdutoReferencia> findByNome(String nome);
     
     Optional<ProdutoReferencia> findFirstByNome(String nome);
-
     Optional<ProdutoReferencia> findByCodigoInterno(String codigoInterno);
-
     Optional<ProdutoReferencia> findByEan(String ean);
 }

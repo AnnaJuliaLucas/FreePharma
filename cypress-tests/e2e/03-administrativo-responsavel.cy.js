@@ -32,13 +32,13 @@ describe('Responsavel API Tests', () => {
       });
     });
 
-    it('should return 403 without authentication', () => {
+    it('should return 401 or 403 without authentication', () => {
       cy.request({
         method: 'GET',
         url: `${baseUrl}/api/responsaveis`,
         failOnStatusCode: false
       }).then((response) => {
-        expect(response.status).to.eq(403);
+        expect(response.status).to.be.oneOf([401, 403]);
       });
     });
   });

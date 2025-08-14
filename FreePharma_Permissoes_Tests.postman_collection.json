@@ -1,0 +1,1013 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-123456789012",
+		"name": "FreePharma - Testes de Permissões",
+		"description": "Collection para testar permissões de ADMIN e USER no sistema FreePharma",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:9876",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "0. Setup - Criar Dados de Teste",
+			"item": [
+				{
+					"name": "Criar Dados de Teste",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Setup Dados - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Setup - Dados criados com sucesso', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('status', 'success');",
+									"    pm.expect(response).to.have.property('usuarios');",
+									"});",
+									"",
+									"console.log('✅ Dados de teste criados:');",
+									"console.log('🔑 ADMIN: admin@teste.com / password123');",
+									"console.log('👤 USER: user@teste.com / password123');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/setup/test-data",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"setup",
+								"test-data"
+							]
+						},
+						"description": "Cria automaticamente todos os dados necessários para os testes:\n- Perfis (ADMIN, USER)\n- Farmácia e Unidade de teste\n- Usuários de teste com senhas criptografadas\n- Associações de perfis e unidades"
+					}
+				},
+				{
+					"name": "Verificar Dados de Teste",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Verificação - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Dados de Teste - Prontos', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('ready', true);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.ready) {",
+									"    console.log('✅ Dados de teste verificados e prontos!');",
+									"    console.log('👑 Admin existe:', response.adminExists);",
+									"    console.log('👤 User existe:', response.userExists);",
+									"} else {",
+									"    console.log('❌ Dados de teste não estão prontos');",
+									"    console.log('Execute o request \"Criar Dados de Teste\" primeiro');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/setup/check",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"setup",
+								"check"
+							]
+						},
+						"description": "Verifica se os usuários de teste existem no banco de dados"
+					}
+				},
+				{
+					"name": "Limpar Dados de Teste (Opcional)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Limpeza - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log('🗑️ Dados de teste removidos');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/setup/test-data",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"setup",
+								"test-data"
+							]
+						},
+						"description": "Remove os dados de teste do sistema (use apenas se necessário)"
+					}
+				}
+			],
+			"description": "Configure os dados de teste antes de executar os testes de permissão.\n\n**INSTRUÇÕES SIMPLIFICADAS:**\n1. ✅ Certifique-se que a aplicação está rodando: `mvn spring-boot:run`\n2. 🔨 Execute \"Criar Dados de Teste\" para setup automático\n3. ✔️ Execute \"Verificar Dados de Teste\" para confirmação\n4. 🚀 Prossiga com os \"Testes de Autenticação\"\n\n**Usuários criados automaticamente:**\n- 👑 ADMIN: admin@teste.com / password123\n- 👤 USER: user@teste.com / password123\n\n**Opcional:** Use \"Limpar Dados de Teste\" para resetar"
+		},
+		{
+			"name": "1. Autenticação",
+			"item": [
+				{
+					"name": "Login ADMIN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.accessToken) {",
+									"        pm.collectionVariables.set('adminToken', response.accessToken);",
+									"        console.log('Token ADMIN salvo:', response.accessToken);",
+									"    }",
+									"}",
+									"",
+									"pm.test('Login ADMIN - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Login ADMIN - Retorna accessToken', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('accessToken');",
+									"});",
+									"",
+									"pm.test('Login ADMIN - Retorna dados do usuário', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('usuario');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@teste.com\",\n  \"senha\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Login USER",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.accessToken) {",
+									"        pm.collectionVariables.set('userToken', response.accessToken);",
+									"        console.log('Token USER salvo:', response.accessToken);",
+									"    }",
+									"}",
+									"",
+									"pm.test('Login USER - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Login USER - Retorna accessToken', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('accessToken');",
+									"});",
+									"",
+									"pm.test('Login USER - Retorna dados do usuário', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('usuario');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@teste.com\",\n  \"senha\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "Login Inválido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Login Inválido - Status 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Login Inválido - Retorna erro', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('error');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"invalid@email.com\",\n  \"senha\": \"wrongpassword\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Rotas Exclusivas ADMIN",
+			"item": [
+				{
+					"name": "Dashboard Admin (Token ADMIN) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Dashboard Admin com ADMIN - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Dashboard Admin - Retorna dados administrativos', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('title');",
+									"    pm.expect(response.title).to.include('Administrativo');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Listar Usuários (Token ADMIN) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Listar Usuários com ADMIN - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Listar Usuários - Retorna lista de usuários', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('users');",
+									"    pm.expect(response).to.have.property('adminOnly', true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							]
+						}
+					}
+				},
+				{
+					"name": "Configurações Sistema (Token ADMIN) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Configurações Sistema com ADMIN - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Configurações - Retorna sucesso', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('status', 'success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"maintenance_mode\": \"false\",\n  \"max_login_attempts\": \"5\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/system/config",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"system",
+								"config"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Negação de Acesso USER → ADMIN",
+			"item": [
+				{
+					"name": "Dashboard Admin (Token USER) ❌",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Dashboard Admin com USER - Status 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Listar Usuários (Token USER) ❌",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Listar Usuários com USER - Status 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							]
+						}
+					}
+				},
+				{
+					"name": "Configurações Sistema (Token USER) ❌",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Configurações Sistema com USER - Status 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"test\": \"config\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/system/config",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"system",
+								"config"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Rotas Compartilhadas USER + ADMIN",
+			"item": [
+				{
+					"name": "Dashboard User (Token USER) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Dashboard User com USER - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Dashboard User - Retorna dados do usuário', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('title');",
+									"    pm.expect(response.title).to.include('Usuário');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/user/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Dashboard User (Token ADMIN) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Dashboard User com ADMIN - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Dashboard User - ADMIN pode acessar', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('title');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/user/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Perfil User (Token USER) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Perfil User com USER - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Perfil - Retorna dados do perfil', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('name');",
+									"    pm.expect(response).to.have.property('email');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/user/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"profile"
+							]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Perfil (Token USER) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Atualizar Perfil com USER - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Atualizar Perfil - Retorna sucesso', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('status', 'success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nome\": \"Usuário Atualizado\",\n  \"telefone\": \"11999998888\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/user/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"profile"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Testes de Segurança",
+			"item": [
+				{
+					"name": "Acesso sem Token ❌",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Acesso sem Token - Status 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Token Inválido ❌",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Token Inválido - Status 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer invalid.jwt.token"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "Validar Token (ADMIN) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Validar Token ADMIN - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Token válido', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('valid', true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"validate"
+							]
+						}
+					}
+				},
+				{
+					"name": "Validar Token (USER) ✅",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Validar Token USER - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Token válido', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('valid', true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"validate"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Refresh Token",
+			"item": [
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Refresh Token - Status 200 ou 400', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Refresh Token - Retorna novo token', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.have.property('token');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"exemplo-refresh-token\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refresh-token"
+							]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Logout - Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Logout - Retorna mensagem', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

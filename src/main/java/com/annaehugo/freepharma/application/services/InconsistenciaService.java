@@ -127,14 +127,8 @@ public class InconsistenciaService {
             throw new RuntimeException("Severidade é obrigatória");
         }
 
-        String[] tiposValidos = {"VALOR_DIVERGENTE", "PRODUTO_INEXISTENTE", "CNPJ_INVALIDO", "DATA_INVALIDA", "ESTRUTURA_XML"};
-        boolean tipoValido = false;
-        for (String tipo : tiposValidos) {
-            if (tipo.equals(inconsistencia.getTipo())) {
-                tipoValido = true;
-                break;
-            }
-        }
+        // Validate TipoInconsistencia - if it's already an enum, it's valid
+        boolean tipoValido = inconsistencia.getTipo() != null;
         if (!tipoValido) {
             throw new RuntimeException("Tipo de inconsistência inválido");
         }

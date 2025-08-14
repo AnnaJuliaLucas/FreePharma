@@ -51,7 +51,6 @@ public class ResponsavelService {
     public Responsavel salvar(Responsavel responsavel) {
         validarDadosResponsavel(responsavel);
         
-        // Verificar se CPF já existe
         if (responsavel.getId() == null) {
             Optional<Responsavel> existenteCpf = buscarPorCpf(responsavel.getCpfCnpj());
             if (existenteCpf.isPresent()) {
@@ -59,7 +58,6 @@ public class ResponsavelService {
             }
         }
         
-        // Verificar se email já existe (se informado)
         if (responsavel.getEmail() != null && !responsavel.getEmail().trim().isEmpty()) {
             Optional<Responsavel> existenteEmail = buscarPorEmail(responsavel.getEmail());
             if (existenteEmail.isPresent() && !existenteEmail.get().getId().equals(responsavel.getId())) {
@@ -124,8 +122,6 @@ public class ResponsavelService {
                 throw new RuntimeException("Email inválido");
             }
         }
-        
-        // Validação de farmácia removida - não existe no modelo atual
         
         if (responsavel.getTelefone() != null && !responsavel.getTelefone().trim().isEmpty()) {
             if (responsavel.getTelefone().replaceAll("[^0-9]", "").length() < 10) {

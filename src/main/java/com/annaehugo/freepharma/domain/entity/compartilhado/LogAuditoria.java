@@ -11,11 +11,6 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(indexes = {
-    @Index(name = "idx_log_usuario", columnList = "usuarioId"),
-    @Index(name = "idx_log_data", columnList = "dataAcao"),
-    @Index(name = "idx_log_entidade", columnList = "entidadeAfetada, entidadeId")
-})
 public class LogAuditoria extends EntidadeBase {
     
     @Column(nullable = false)
@@ -33,10 +28,10 @@ public class LogAuditoria extends EntidadeBase {
     private Long entidadeId; // ID do registro afetado
     
     @Column(columnDefinition = "TEXT")
-    private String valoresAnteriores; // JSON dos valores antes da alteração
+    private String valoresAnteriores;
     
     @Column(columnDefinition = "TEXT")
-    private String valoresNovos; // JSON dos valores após a alteração
+    private String valoresNovos;
     
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)

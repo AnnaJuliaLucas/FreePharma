@@ -1,6 +1,7 @@
 package com.annaehugo.freepharma.application.services;
 
 import com.annaehugo.freepharma.application.dto.fiscal.NFeXmlData;
+import com.annaehugo.freepharma.domain.entity.administrativo.Farmacia;
 import com.annaehugo.freepharma.domain.entity.administrativo.Unidade;
 import com.annaehugo.freepharma.domain.entity.estoque.*;
 import com.annaehugo.freepharma.domain.entity.fiscal.*;
@@ -17,12 +18,17 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Calendar;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ProcessamentoNFeValidacaoTest {
 
     @Mock
@@ -57,6 +63,7 @@ class ProcessamentoNFeValidacaoTest {
         nfeData.setNumero("123");
         nfeData.setValorTotal(new BigDecimal("100.00"));
         nfeData.setDataEmissao(new Date());
+        nfeData.setTipoOperacao("COMPRA");
 
         // Configurar emitente
         NFeXmlData.EmitenteDados emitente = new NFeXmlData.EmitenteDados();
@@ -76,21 +83,55 @@ class ProcessamentoNFeValidacaoTest {
         nfeData.setItens(new ArrayList<>());
         nfeData.getItens().add(item);
 
-        // Configurar unidade e importação
+        // Configurar farmacia e unidade 
+        Farmacia farmacia = new Farmacia();
+        farmacia.setId(1L);
+        farmacia.setRazaoSocial("Farmacia Teste");
+        
         unidade = new Unidade();
         unidade.setId(1L);
         unidade.setCnpj("98765432000188");
+        unidade.setFarmacia(farmacia);
 
         importacao = new ImportacaoNFe();
         importacao.setId(1L);
 
-        // Mocks básicos
-        when(fornecedorRepository.save(any(Fornecedor.class))).thenReturn(new Fornecedor());
-        when(produtoReferenciaRepository.save(any(ProdutoReferencia.class))).thenReturn(new ProdutoReferencia());
-        when(produtoFornecedorRepository.save(any(ProdutoFornecedor.class))).thenReturn(new ProdutoFornecedor());
-        when(notaFiscalRepository.save(any(NotaFiscal.class))).thenReturn(new NotaFiscal());
+        // Configurar mocks para criação de entidades
+        Fornecedor fornecedorMock = new Fornecedor();
+        fornecedorMock.setId(1L);
+        fornecedorMock.setCnpj("12345678000199");
+        fornecedorMock.setRazaoSocial("Fornecedor Teste Ltda");
+        
+        ProdutoReferencia produtoReferenciaMock = new ProdutoReferencia();
+        produtoReferenciaMock.setId(1L);
+        produtoReferenciaMock.setNome("Produto Teste");
+        
+        ProdutoFornecedor produtoFornecedorMock = new ProdutoFornecedor();
+        produtoFornecedorMock.setId(1L);
+        produtoFornecedorMock.setProdutoReferencia(produtoReferenciaMock);
+        produtoFornecedorMock.setFornecedor(fornecedorMock);
+        
+        NotaFiscal notaFiscalMock = new NotaFiscal();
+        notaFiscalMock.setId(1L);
+        notaFiscalMock.setFornecedor(fornecedorMock);
+        notaFiscalMock.setUnidade(unidade);
+        
+        Inconsistencia inconsistenciaMock = new Inconsistencia();
+        inconsistenciaMock.setId(1L);
+        
+        // Configurar mocks básicos
+        when(fornecedorRepository.save(any(Fornecedor.class))).thenReturn(fornecedorMock);
+        when(fornecedorRepository.findByCnpj(anyString())).thenReturn(Optional.empty());
+        when(produtoReferenciaRepository.save(any(ProdutoReferencia.class))).thenReturn(produtoReferenciaMock);
+        when(produtoReferenciaRepository.findByEan(anyString())).thenReturn(Optional.empty());
+        when(produtoReferenciaRepository.findFirstByNome(anyString())).thenReturn(Optional.empty());
+        when(produtoFornecedorRepository.save(any(ProdutoFornecedor.class))).thenReturn(produtoFornecedorMock);
+        when(produtoFornecedorRepository.findByProdutoReferenciaAndFornecedor(any(), any())).thenReturn(Optional.empty());
+        when(notaFiscalRepository.save(any(NotaFiscal.class))).thenReturn(notaFiscalMock);
         when(notaFiscalItemRepository.save(any(NotaFiscalItem.class))).thenReturn(new NotaFiscalItem());
         when(estoqueProdutoRepository.save(any(EstoqueProduto.class))).thenReturn(new EstoqueProduto());
+        when(estoqueProdutoRepository.findByProdutoFornecedorAndUnidadeAndLote(any(), any(), anyString())).thenReturn(Optional.empty());
+        when(inconsistenciaRepository.save(any(Inconsistencia.class))).thenReturn(inconsistenciaMock);
     }
 
     @Test

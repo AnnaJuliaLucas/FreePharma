@@ -11,13 +11,12 @@ import java.util.Optional;
 
 @Repository
 public interface PermissaoRepository extends JpaRepository<Permissao, Long> {
-    
+    @Query("SELECT p FROM Permissao p WHERE p.modulo = :modulo AND p.ativo = true ORDER BY p.nome")
+    List<Permissao> findPermissoesByModulo(@Param("modulo") String modulo);
     List<Permissao> findByAtivoTrue();
-    
     List<Permissao> findByModuloAndAtivoTrue(String modulo);
     
     Optional<Permissao> findByCodigo(String codigo);
     
-    @Query("SELECT p FROM Permissao p WHERE p.modulo = :modulo AND p.ativo = true ORDER BY p.nome")
-    List<Permissao> findPermissoesByModulo(@Param("modulo") String modulo);
+
 }

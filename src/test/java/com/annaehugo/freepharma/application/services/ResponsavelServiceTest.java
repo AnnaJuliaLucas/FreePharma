@@ -9,6 +9,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ResponsavelServiceTest {
 
     @Mock
@@ -61,7 +64,7 @@ class ResponsavelServiceTest {
     void listarPorFarmacia_DeveRetornarResponsaveisDaFarmacia() {
         // Given
         List<Responsavel> responsaveis = Arrays.asList(responsavel);
-        when(responsavelRepository.findAll()).thenReturn(responsaveis);
+        when(responsavelRepository.findByFarmaciaId(1L)).thenReturn(responsaveis);
 
         // When
         List<Responsavel> resultado = responsavelService.listarPorFarmacia(1L);
@@ -69,15 +72,14 @@ class ResponsavelServiceTest {
         // Then
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        verify(responsavelRepository).findAll();
-        // Nota: Implementação atual é temporária, por isso usa findAll()
+        verify(responsavelRepository).findByFarmaciaId(1L);
     }
 
     @Test
     void listarAtivos_DeveRetornarResponsaveisAtivos() {
         // Given
         List<Responsavel> responsaveis = Arrays.asList(responsavel);
-        when(responsavelRepository.findAll()).thenReturn(responsaveis);
+        when(responsavelRepository.findByAtivoTrue()).thenReturn(responsaveis);
 
         // When
         List<Responsavel> resultado = responsavelService.listarAtivos();
@@ -85,8 +87,7 @@ class ResponsavelServiceTest {
         // Then
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        verify(responsavelRepository).findAll();
-        // Nota: Implementação atual é temporária, por isso usa findAll()
+        verify(responsavelRepository).findByAtivoTrue();
     }
 
     @Test
@@ -119,29 +120,27 @@ class ResponsavelServiceTest {
     @Test
     void buscarPorCpf_DeveRetornarResponsavel() {
         // Given
-        when(responsavelRepository.findById(1L)).thenReturn(Optional.of(responsavel));
+        when(responsavelRepository.findByCpfCnpj("12345678901")).thenReturn(Optional.of(responsavel));
 
         // When
         Optional<Responsavel> resultado = responsavelService.buscarPorCpf("12345678901");
 
         // Then
         assertTrue(resultado.isPresent());
-        verify(responsavelRepository).findById(1L);
-        // Nota: Implementação atual é temporária, por isso usa findById(1L)
+        verify(responsavelRepository).findByCpfCnpj("12345678901");
     }
 
     @Test
     void buscarPorEmail_DeveRetornarResponsavel() {
         // Given
-        when(responsavelRepository.findById(1L)).thenReturn(Optional.of(responsavel));
+        when(responsavelRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(responsavel));
 
         // When
         Optional<Responsavel> resultado = responsavelService.buscarPorEmail("joao@email.com");
 
         // Then
         assertTrue(resultado.isPresent());
-        verify(responsavelRepository).findById(1L);
-        // Nota: Implementação atual é temporária, por isso usa findById(1L)
+        verify(responsavelRepository).findByEmail("joao@email.com");
     }
 
     @Test
@@ -149,6 +148,7 @@ class ResponsavelServiceTest {
         // Given
         Responsavel novoResponsavel = new Responsavel();
         novoResponsavel.setNome("Maria Santos");
+        novoResponsavel.setCpfCnpj("12345678901");
 
         when(responsavelRepository.save(any(Responsavel.class))).thenReturn(novoResponsavel);
 
@@ -204,6 +204,7 @@ class ResponsavelServiceTest {
         // Given
         Responsavel responsavelAtualizado = new Responsavel();
         responsavelAtualizado.setNome("João Silva Atualizado");
+        responsavelAtualizado.setCpfCnpj("12345678901");
 
         when(responsavelRepository.findById(1L)).thenReturn(Optional.of(responsavel));
         when(responsavelRepository.save(any(Responsavel.class))).thenReturn(responsavelAtualizado);

@@ -1,0 +1,264 @@
+```mermaid
+classDiagram
+    class EntidadeBase {
+        <<abstract>>
+        +Long id
+        +Date createdAt
+        +Date updatedAt
+        +boolean ativo
+    }
+
+    class Pessoa {
+        <<abstract>>
+        +String nome
+        +String cpfCnpj
+        +String email
+        +String telefone
+    }
+
+    class Farmacia {
+        +String razaoSocial
+        +String nomeFantasia
+        +String cnpj
+        +String inscricaoEstadual
+        +String endereco
+        +String telefoneContato
+        +String emailContato
+        +String status
+    }
+
+    class Unidade {
+        +String tipo
+        +String razaoSocial
+        +String nomeFantasia
+        +String cnpj
+        +String endereco
+        +String telefone
+        +String email
+        +String status
+    }
+
+    class Responsavel {
+        +String registroProfissional
+        +Boolean status
+        +String crf
+    }
+
+    class UsuarioAdministrador {
+        +String login
+        +String senha
+        +Date dataCadastro
+        +String status
+        +Boolean autenticacao2FA
+    }
+
+    class Cliente {
+        +String nome
+        +String cpfCnpj
+        +String endereco
+        +String email
+        +String telefone
+        +String status
+    }
+
+    class Perfil {
+        +String nome
+        +String descricao
+        +Boolean ativo
+    }
+
+    class Permissao {
+        +String nome
+        +String descricao
+        +Boolean ativo
+    }
+
+    class Fornecedor {
+        +String razaoSocial
+        +String nomeFantasia
+        +String cnpj
+        +String endereco
+        +String email
+        +String telefone
+        +String status
+    }
+
+    class Categoria {
+        +String nome
+        +String descricao
+        +Boolean ativo
+    }
+
+    class ProdutoReferencia {
+        +String codigoInterno
+        +String nome
+        +String descricao
+        +String ean
+        +String unidadeMedida
+        +String status
+    }
+
+    class ProdutoFornecedor {
+        +BigDecimal precoCompra
+        +BigDecimal precoVenda
+        +String codigoFornecedor
+        +String nomeFornecedor
+        +Boolean ativo
+    }
+
+    class EstoqueProduto {
+        +Integer quantidadeAtual
+        +Integer estoqueMinimo
+        +Integer estoqueMaximo
+        +BigDecimal valorUnitario
+        +String lote
+        +Date dataVencimento
+        +Boolean bloqueado
+    }
+
+    class AjusteEstoqueProduto {
+        +String tipo
+        +Integer quantidadeAnterior
+        +Integer quantidadeAjuste
+        +String motivoAjuste
+        +Date dataAjuste
+    }
+
+    class HistoricoValorProduto {
+        +BigDecimal valorAnterior
+        +BigDecimal valorNovo
+        +Date dataAlteracao
+        +String motivoAlteracao
+    }
+
+    class NotaFiscal {
+        +String numero
+        +String chaveAcesso
+        +String status
+        +Date dataEmissao
+        +BigDecimal valorTotal
+        +String tipoOperacao
+    }
+
+    class NotaFiscalItem {
+        +BigDecimal valorUnitario
+        +String descricao
+        +BigDecimal quantidade
+    }
+
+    class ImportacaoNFe {
+        +String nomeArquivo
+        +String status
+        +Date dataImportacao
+        +String observacoes
+    }
+
+    class LoteProcessamento {
+        +String codigo
+        +Date dataInicio
+        +Date dataFim
+        +String status
+        +Integer totalNotasProcessadas
+    }
+
+    class Inconsistencia {
+        +String tipo
+        +String descricao
+        +Date dataDeteccao
+        +String status
+        +String severidade
+    }
+
+    class ConfiguracaoFiscal {
+        +String regimeTributario
+        +Boolean simplesNacional
+        +String inscricaoEstadual
+        +Boolean ativo
+    }
+
+    class Notificacao {
+        +String titulo
+        +String mensagem
+        +String tipo
+        +Boolean lida
+        +Date dataEnvio
+    }
+
+    class LogAuditoria {
+        +String acao
+        +String tabela
+        +String usuario
+        +Date dataHora
+    }
+
+    EntidadeBase <|-- Pessoa
+    EntidadeBase <|-- Farmacia
+    EntidadeBase <|-- Cliente
+    EntidadeBase <|-- Unidade
+    EntidadeBase <|-- Perfil
+    EntidadeBase <|-- Permissao
+    EntidadeBase <|-- Fornecedor
+    EntidadeBase <|-- Categoria
+    EntidadeBase <|-- ProdutoReferencia
+    EntidadeBase <|-- ProdutoFornecedor
+    EntidadeBase <|-- EstoqueProduto
+    EntidadeBase <|-- AjusteEstoqueProduto
+    EntidadeBase <|-- HistoricoValorProduto
+    EntidadeBase <|-- NotaFiscal
+    EntidadeBase <|-- NotaFiscalItem
+    EntidadeBase <|-- ImportacaoNFe
+    EntidadeBase <|-- LoteProcessamento
+    EntidadeBase <|-- Inconsistencia
+    EntidadeBase <|-- ConfiguracaoFiscal
+    EntidadeBase <|-- Notificacao
+    EntidadeBase <|-- LogAuditoria
+
+    Pessoa <|-- Responsavel
+    Pessoa <|-- UsuarioAdministrador
+
+    Farmacia ||--o{ Responsavel
+    Farmacia ||--o{ Unidade
+    Farmacia ||--|| ConfiguracaoFiscal
+
+    Unidade ||--o{ EstoqueProduto
+    Unidade }o--|| Farmacia
+    Unidade }o--|| Responsavel
+
+    Categoria ||--o{ ProdutoReferencia
+    ProdutoReferencia }o--|| Categoria
+    ProdutoReferencia ||--o{ ProdutoFornecedor
+
+    Fornecedor ||--o{ ProdutoFornecedor
+    ProdutoFornecedor }o--|| Fornecedor
+    ProdutoFornecedor }o--|| ProdutoReferencia
+    ProdutoFornecedor ||--o{ EstoqueProduto
+
+    EstoqueProduto }o--|| ProdutoFornecedor
+    EstoqueProduto }o--|| Unidade
+    EstoqueProduto ||--o{ AjusteEstoqueProduto
+    EstoqueProduto ||--o{ HistoricoValorProduto
+
+    NotaFiscal }o--|| Fornecedor
+    NotaFiscal }o--|| Cliente
+    NotaFiscal }o--|| Unidade
+    NotaFiscal }o--|| ImportacaoNFe
+    NotaFiscal ||--o{ NotaFiscalItem
+    NotaFiscal ||--o{ Inconsistencia
+
+    NotaFiscalItem }o--|| NotaFiscal
+    NotaFiscalItem }o--|| ProdutoReferencia
+
+    ImportacaoNFe ||--o{ NotaFiscal
+    ImportacaoNFe ||--o{ Inconsistencia
+
+    LoteProcessamento ||--o{ NotaFiscal
+    NotaFiscal }o--|| LoteProcessamento
+
+    Inconsistencia }o--|| NotaFiscal
+    Inconsistencia }o--|| ImportacaoNFe
+    Inconsistencia ||--o{ Notificacao
+
+    UsuarioAdministrador }o--o{ Perfil
+    UsuarioAdministrador }o--o{ Unidade
+    Perfil }o--o{ Permissao
+```

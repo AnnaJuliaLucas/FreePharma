@@ -136,17 +136,16 @@ public class ProdutoReferenciaController {
         }
     }
 
-    @PatchMapping("/{id}/descontinuar")
-    public ResponseEntity<?> descontinuar(@PathVariable Long id) {
-        try {
-            produtoService.descontinuar(id);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
+//    @PatchMapping("/{id}/descontinuar")
+//    public ResponseEntity<?> descontinuar(@PathVariable Long id) {
+//        try {
+//            produtoService.descontinuar(id);
+//            return ResponseEntity.ok().build();
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
 
-    // Endpoints específicos para Medicamentos
     @GetMapping("/medicamentos")
     public ResponseEntity<List<Medicamento>> listarMedicamentos() {
         List<Medicamento> medicamentos = produtoService.listarMedicamentos();

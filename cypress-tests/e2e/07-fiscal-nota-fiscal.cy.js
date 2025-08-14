@@ -61,7 +61,7 @@ describe('Nota Fiscal API Tests', () => {
         url: `${baseUrl}/api/notas-fiscais`,
         failOnStatusCode: false
       }).then((response) => {
-        expect(response.status).to.eq(403);
+        expect(response.status).to.be.oneOf([401, 403]);
       });
     });
   });

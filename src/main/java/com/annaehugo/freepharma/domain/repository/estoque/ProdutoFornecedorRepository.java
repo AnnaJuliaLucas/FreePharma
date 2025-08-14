@@ -14,8 +14,6 @@ public interface ProdutoFornecedorRepository extends JpaRepository<ProdutoFornec
     Optional<ProdutoFornecedor> findByProdutoReferenciaAndFornecedor(ProdutoReferencia produtoReferencia, Fornecedor fornecedor);
     
     List<ProdutoFornecedor> findByFornecedor(Fornecedor fornecedor);
-    
     List<ProdutoFornecedor> findByProdutoReferencia(ProdutoReferencia produtoReferencia);
-    
     List<ProdutoFornecedor> findByAtivoTrue();
 }
